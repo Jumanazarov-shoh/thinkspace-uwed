@@ -1,6 +1,6 @@
 """
 Notification delivery service for ThinkSpace | UWED.
-Safely dispatches messages via aiogram Telegram Bot with error handling and retry logging.
+Safely dispatches messages via Telegram Bot API with error handling and retry logging.
 """
 from datetime import datetime, timezone
 import logging
@@ -32,21 +32,23 @@ async def send_telegram_notification(
 
     if settings.TELEGRAM_BOT_TOKEN and not settings.TELEGRAM_BOT_TOKEN.startswith("dummy_"):
         try:
-            from aiogram import Bot
-            from aiogram.enums import ParseMode
-            
-            bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
-            try:
-                full_text = f"✨ <b>{title}</b>\n\n{message}\n\n🏛 <i>ThinkSpace | UWED</i>"
-                await bot.send_message(
-                    chat_id=user.telegram_id,
-                    text=full_text,
-                    parse_mode=ParseMode.HTML
+            import httpx
+            full_text = f"✨ <b>{title}</b>\n\n{message}\n\n🏛 <i>ThinkSpace | UWED</i>"
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.post(
+                    f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={
+                        "chat_id": user.telegram_id,
+                        "text": full_text,
+                        "parse_mode": "HTML"
+                    }
                 )
-                record.is_sent = True
-                record.sent_at = datetime.now(timezone.utc)
-            finally:
-                await bot.session.close()
+                if res.status_code == 200:
+                    record.is_sent = True
+                    record.sent_at = datetime.now(timezone.utc)
+                else:
+                    record.error_message = res.text
+                    logger.warning(f"Telegram API warning: {res.text}")
         except Exception as e:
             logger.warning(f"Failed to send notification to Telegram user {user.telegram_id}: {e}")
             record.error_message = str(e)
