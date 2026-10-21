@@ -47,6 +47,9 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem('thinkspace_token');
+    }
     let errorDetail = response.statusText;
     try {
       const errJson = await response.json();

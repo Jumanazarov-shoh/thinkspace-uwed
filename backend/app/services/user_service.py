@@ -55,6 +55,7 @@ def get_or_create_user_from_telegram(
         user.first_name = first_name
         user.last_name = last_name
         user.username = username
+        user.display_name = display_name
         if is_super_admin and not user.has_role(RoleEnum.SUPER_ADMIN.value):
             user.status = UserStatus.APPROVED.value
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.SUPER_ADMIN.value))

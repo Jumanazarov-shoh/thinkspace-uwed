@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   isAuthenticated: boolean;
   isMember: boolean;
   isEvaluator: boolean;
@@ -39,6 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('thinkspace_token'));
   const [loading, setLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = () => setAuthError(null);
 
   const refreshUser = async () => {
     try {
@@ -86,8 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(res.user);
             setLoading(false);
             return;
-          } catch (e) {
+          } catch (e: any) {
             console.warn('Telegram initData authentication failed:', e);
+            setAuthError(e.message || 'Telegram autentifikatsiyasi tasdiqlanmadi (Invalid or expired Telegram session).');
           }
         }
       }
@@ -132,6 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         loading,
+        authError,
+        clearAuthError,
         isAuthenticated: !!user,
         isMember,
         isEvaluator,

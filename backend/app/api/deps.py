@@ -51,6 +51,10 @@ def get_current_user(
             detail="Hisobingiz vaqtincha to'xtatilgan (Account is suspended)",
         )
 
+    from datetime import datetime, timezone
+    user.last_activity_at = datetime.now(timezone.utc)
+    db.commit()
+
     return user
 
 def get_current_active_member(

@@ -11,12 +11,23 @@ import {
   Sparkles, 
   CheckCircle2, 
   Clock, 
-  Send 
+  Send,
+  Edit3,
+  Save,
+  LogOut
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
   const { t, language, setLanguage } = useTranslation();
-  const { user, loginAs, refreshUser } = useAuth();
+  const { user, loginAs, refreshUser, logout } = useAuth();
+
+  // Profile Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState(user?.display_name || '');
+  const [editStudentId, setEditStudentId] = useState(user?.student_id || '');
+  const [editFaculty, setEditFaculty] = useState(user?.faculty || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Membership Application Form State
   const [statement, setStatement] = useState('');
@@ -28,6 +39,27 @@ export const ProfilePage: React.FC = () => {
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await api.updateProfile({
+        display_name: editDisplayName,
+        student_id: editStudentId,
+        faculty: editFaculty,
+        phone: editPhone
+      });
+      await refreshUser();
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Xatolik yuz berdi');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +134,94 @@ export const ProfilePage: React.FC = () => {
             <p className="text-gray-400 text-[10px] uppercase font-semibold">{t.profile.faculty}</p>
             <p className="font-medium text-gray-800 truncate">{user?.faculty || 'UWED SIEM'}</p>
           </div>
+          <div>
+            <p className="text-gray-400 text-[10px] uppercase font-semibold">{t.profile.phone}</p>
+            <p className="font-medium text-gray-800">{user?.phone || 'Kiritilmagan'}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-[10px] uppercase font-semibold">Rollar</p>
+            <p className="font-medium text-blue-700 capitalize">
+              {user?.roles?.map(r => r.role_name.replace('_', ' ')).join(', ') || 'Oddiy a\'zo'}
+            </p>
+          </div>
         </div>
+
+        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => {
+              setEditDisplayName(user?.display_name || '');
+              setEditStudentId(user?.student_id || '');
+              setEditFaculty(user?.faculty || '');
+              setEditPhone(user?.phone || '');
+              setIsEditing(!isEditing);
+            }}
+            className="flex items-center space-x-1 text-xs text-blue-700 hover:text-blue-800 font-medium"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>{isEditing ? 'Bekor qilish' : 'Profilni tahrirlash'}</span>
+          </button>
+
+          {saveSuccess && (
+            <span className="flex items-center space-x-1 text-[11px] text-emerald-700 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Saqlandi!</span>
+            </span>
+          )}
+        </div>
+
+        {/* Inline Edit Form */}
+        {isEditing && (
+          <form onSubmit={handleSaveProfile} className="pt-3 border-t border-gray-100 space-y-2 text-xs">
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-0.5">Ism-familiya:</label>
+              <input
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-700 text-xs"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-0.5">Talaba ID:</label>
+                <input
+                  type="text"
+                  value={editStudentId}
+                  onChange={(e) => setEditStudentId(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-700 text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-600 mb-0.5">Telefon:</label>
+                <input
+                  type="text"
+                  placeholder="+998 90..."
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-700 text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-0.5">Fakultet:</label>
+              <input
+                type="text"
+                value={editFaculty}
+                onChange={(e) => setEditFaculty(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-700 text-xs"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-navy-900 hover:bg-navy-800 text-white font-medium py-2 rounded text-xs flex items-center justify-center space-x-1.5 transition"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{submitting ? 'Saqlanmoqda...' : 'O\'zgarishlarni saqlash'}</span>
+            </button>
+          </form>
+        )}
       </div>
 
       {/* Membership Application Form (if pending and not applied yet) */}
@@ -256,6 +375,18 @@ export const ProfilePage: React.FC = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Logout Action */}
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full py-2.5 px-4 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Hisobdan chiqish (Logout)</span>
+        </button>
       </div>
     </div>
   );

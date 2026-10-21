@@ -24,7 +24,7 @@ import { ShieldAlert, ArrowLeft, Sparkles } from 'lucide-react';
 import { RoleName } from './types';
 
 export const App: React.FC = () => {
-  const { user, loading, isStaff, loginAs } = useAuth();
+  const { user, loading, authError, clearAuthError, isStaff, loginAs } = useAuth();
   const { t } = useTranslation();
 
   // Navigation State
@@ -44,6 +44,29 @@ export const App: React.FC = () => {
         </div>
         <h1 className="mt-4 font-serif font-bold text-lg tracking-wide">ThinkSpace | UWED</h1>
         <p className="text-xs text-blue-300 mt-1">Connecting intellectual academic platform...</p>
+      </div>
+    );
+  }
+
+  // Authentication Error Screen
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
+        <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert className="w-7 h-7" />
+        </div>
+        <h2 className="font-serif font-bold text-lg text-navy-950 mb-1">
+          Autentifikatsiya xatosi (Authentication Error)
+        </h2>
+        <p className="text-xs text-gray-600 mb-5 leading-relaxed">
+          {authError}
+        </p>
+        <button
+          onClick={() => { clearAuthError(); window.location.reload(); }}
+          className="px-5 py-2.5 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+        >
+          Qayta urinish (Retry)
+        </button>
       </div>
     );
   }

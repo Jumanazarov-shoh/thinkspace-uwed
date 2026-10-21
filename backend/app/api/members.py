@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.api.deps import get_current_user, require_roles
 from app.models.user import User, MembershipRequest, RoleEnum, UserStatus
+from app.models.audit import AuditLog
 from app.schemas.user import (
     MembershipRequestCreate,
     MembershipRequestReview,
@@ -100,11 +101,34 @@ def assign_user_role(
     current_user: User = Depends(require_roles([RoleEnum.SUPER_ADMIN.value])),
     db: Session = Depends(get_db)
 ):
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O'z rolingizni o'zgartira olmaysiz (Cannot modify your own role)"
+        )
+
+    valid_roles = [r.value for r in RoleEnum]
+    if payload.role_name not in valid_roles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Noto'g'ri rol. Ruxsat etilgan rollar: {', '.join(valid_roles)}"
+        )
+
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
 
     assign_role_to_user(db, user_id, payload.role_name, granted_by_id=current_user.id)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="role_assigned",
+        entity_type="user_role",
+        entity_id=str(user_id),
+        details={"role_name": payload.role_name, "target_user_id": user_id}
+    )
+    db.add(audit)
+
     db.commit()
     db.refresh(user)
     return UserResponse.model_validate(user)
@@ -116,11 +140,27 @@ def remove_user_role(
     current_user: User = Depends(require_roles([RoleEnum.SUPER_ADMIN.value])),
     db: Session = Depends(get_db)
 ):
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O'z rolingizni o'zgartira olmaysiz (Cannot modify your own role)"
+        )
+
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
 
     revoke_role_from_user(db, user_id, role_name)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="role_revoked",
+        entity_type="user_role",
+        entity_id=str(user_id),
+        details={"role_name": role_name, "target_user_id": user_id}
+    )
+    db.add(audit)
+
     db.commit()
     db.refresh(user)
     return UserResponse.model_validate(user)

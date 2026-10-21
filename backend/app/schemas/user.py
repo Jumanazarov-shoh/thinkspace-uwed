@@ -46,6 +46,7 @@ class UserResponse(CompatBaseModel):
     roles: List[UserRoleResponse] = []
     created_at: datetime
     updated_at: datetime
+    last_activity_at: Optional[datetime] = None
 
 class TelegramAuthRequest(CompatBaseModel):
     init_data: str
