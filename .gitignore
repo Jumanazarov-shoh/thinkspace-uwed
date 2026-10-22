@@ -56,3 +56,5 @@ m8_instructions.txt
 .idea/
 .DS_Store
 Thumbs.db
+
+.vite/
