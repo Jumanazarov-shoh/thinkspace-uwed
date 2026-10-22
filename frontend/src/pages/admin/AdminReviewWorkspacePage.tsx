@@ -180,12 +180,12 @@ export const AdminReviewWorkspacePage: React.FC<AdminReviewWorkspacePageProps> =
         </div>
 
         {/* Submissions Switcher */}
-        <div className="flex items-center space-x-3 shrink-0 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <label className="text-gray-500 font-medium">Select Submission:</label>
           <select
             value={selectedSubId || ''}
             onChange={(e) => setSelectedSubId(Number(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-navy-900 font-medium focus:ring-1 focus:ring-blue-600 focus:outline-none"
+            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-navy-900 font-medium focus:ring-1 focus:ring-blue-600 focus:outline-none"
           >
             {submissions.map((s) => (
               <option key={s.id} value={s.id}>
