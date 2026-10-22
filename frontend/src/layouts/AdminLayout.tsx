@@ -67,7 +67,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       {isMobileOpen && (
         <div 
           onClick={() => setIsMobileOpen(false)}
-          className="fixed inset-0 bg-[#0B192C]/70 backdrop-blur-xs z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-[#0B192C]/75 backdrop-blur-xs z-40 md:hidden transition-opacity"
           aria-hidden="true"
         />
       )}
@@ -75,8 +75,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       {/* Sidebar (Desktop static, Mobile slide-over drawer) */}
       <aside 
         className={`
-          fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#0B192C] text-white flex flex-col justify-between shrink-0 shadow-2xl md:shadow-xl border-r border-navy-800 transition-transform duration-300 ease-in-out
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#0B192C] text-white flex flex-col justify-between shrink-0 border-r border-navy-800 transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 pointer-events-none md:pointer-events-auto'}
         `}
       >
         <div className="overflow-y-auto">
