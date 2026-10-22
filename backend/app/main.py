@@ -14,7 +14,10 @@ from app.api import api_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    create_tables()
+    try:
+        create_tables()
+    except Exception as e:
+        print(f"[lifespan] create_tables notice: {e}")
     yield
 
 app = FastAPI(
