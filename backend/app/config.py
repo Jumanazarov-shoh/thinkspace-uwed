@@ -4,13 +4,23 @@ Loaded from environment variables with sensible defaults for local development.
 """
 from typing import List, Union, Optional
 import os
+
 try:
-    from pydantic_settings import BaseSettings
-    from pydantic import field_validator as validator_decorator
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+    from pydantic import field_validator
     IS_V2 = True
-except ImportError:
-    from pydantic import BaseSettings, validator as validator_decorator
-    IS_V2 = False
+except (ImportError, Exception):
+    try:
+        from pydantic import BaseSettings, validator
+        SettingsConfigDict = None
+        field_validator = None
+        IS_V2 = False
+    except Exception:
+        from pydantic import BaseModel as BaseSettings
+        validator = None
+        SettingsConfigDict = None
+        field_validator = None
+        IS_V2 = False
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
@@ -49,18 +59,45 @@ class Settings(BaseSettings):
     # Internationalization
     DEFAULT_LANGUAGE: str = "uz"
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    if IS_V2:
+        model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    @validator_decorator("CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+        @field_validator("CORS_ORIGINS", mode="before")
+        @classmethod
+        def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+            if isinstance(v, str):
+                return [i.strip() for i in v.split(",") if i.strip()]
+            return v
+    else:
+        class Config:
+            env_file = ".env"
+            extra = "ignore"
+
+        if 'validator' in globals() and validator is not None:
+            @validator("CORS_ORIGINS", pre=True)
+            def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+                if isinstance(v, str):
+                    return [i.strip() for i in v.split(",") if i.strip()]
+                return v
 
     @property
     def is_sqlite(self) -> bool:
         return self.DATABASE_URL.startswith("sqlite")
 
-settings = Settings()
+# Populate from environment variables if running as plain BaseModel fallback
+def _build_settings() -> Settings:
+    s = Settings()
+    for field_name in s.__fields__ if hasattr(s, '__fields__') else getattr(s, 'model_fields', {}):
+        if field_name in os.environ:
+            val = os.environ[field_name]
+            if field_name == "CORS_ORIGINS" and isinstance(val, str):
+                val = [i.strip() for i in val.split(",") if i.strip()]
+            elif field_name in ("SUPER_ADMIN_TELEGRAM_ID", "ACCESS_TOKEN_EXPIRE_MINUTES", "MAX_FILE_SIZE_MB"):
+                try:
+                    val = int(val)
+                except ValueError:
+                    pass
+            setattr(s, field_name, val)
+    return s
+
+settings = _build_settings()
