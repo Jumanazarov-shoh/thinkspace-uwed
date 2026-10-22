@@ -57,9 +57,9 @@ The system runs on modern, secure, serverless/cloud platforms optimized for the 
 | Component | Platform | Plan Tier | Key Responsibilities |
 | :--- | :--- | :--- | :--- |
 | **Frontend** | Vercel | Hobby (Free) | Host React Vite SPA, edge routing, HTTPS, Mini App Webview |
-| **Backend API** | Railway | Starter / Trial (Free) | FastAPI application, REST endpoints, RBAC validation, points engine |
-| **Bot Worker** | Railway | Starter / Trial (Free) | Telegram bot background process, command handlers, Mini App launcher |
-| **Reminder Cron**| Railway | Starter / Trial (Free) | Scheduled worker triggering deadline reminder processing |
+| **Backend API** | Render / Railway | Free ($0) | FastAPI application, REST endpoints, RBAC validation, points engine |
+| **Bot Worker** | Render / Railway | Free ($0) | Telegram bot background process, command handlers, Mini App launcher |
+| **Reminder Cron**| Render / Railway | Free ($0) | Lifespan periodic task triggering deadline reminder processing |
 | **Database** | Supabase | Free Tier | Managed PostgreSQL with connection pooling & Alembic migrations |
 | **File Storage** | Supabase Storage| Free Tier | Encrypted private cloud storage for member submission documents |
 
