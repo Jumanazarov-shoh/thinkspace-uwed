@@ -45,18 +45,18 @@ async def handle_start(message: types.Message):
         user_status = user.status
         is_admin = user.has_role(RoleEnum.SUPER_ADMIN.value) or user.has_role(RoleEnum.MODERATOR.value)
 
-    # Build welcoming academic message
+    # Build welcoming academic message with properly escaped HTML
     welcome_header = (
         f"🏛 <b>ThinkSpace | UWED</b>\n"
         f"<i>Xalqaro iqtisodiyot va menejment fakulteti intellektual klubi</i>\n\n"
         f"Assalomu alaykum, <b>{tg_user.first_name}</b>!\n\n"
         f"Klubimiz 6 ta asosiy yo'nalish bo'yicha ilmiy va amaliy ko'nikmalarni rivojlantiradi:\n"
-        f"• <b>Think & Read</b> — Kitob va tahliliy maqolalar sharhi\n"
-        f"• <b>Think & Discuss</b> — Debatlar va intellektual muloqot\n"
-        f"• <b>Think & Analyze</b> — Keys-stadi va zamonaviy tahlil\n"
-        f"• <b>Think & Lead</b> — Yetakchilik va jamoaviy boshqaruv\n"
-        f"• <b>Think & Create</b> — Yangi g'oyalar va innovatsion loyihalar\n"
-        f"• <b>Think & Connect</b> — Professional tarmoq va hamkorlik\n\n"
+        f"• <b>Think &amp; Read</b> — Kitob va tahliliy maqolalar sharhi\n"
+        f"• <b>Think &amp; Discuss</b> — Debatlar va intellektual muloqot\n"
+        f"• <b>Think &amp; Analyze</b> — Keys-stadi va zamonaviy tahlil\n"
+        f"• <b>Think &amp; Lead</b> — Yetakchilik va jamoaviy boshqaruv\n"
+        f"• <b>Think &amp; Create</b> — Yangi g'oyalar va innovatsion loyihalar\n"
+        f"• <b>Think &amp; Connect</b> — Professional tarmoq va hamkorlik\n\n"
     )
 
     # Mini App Launch Button
