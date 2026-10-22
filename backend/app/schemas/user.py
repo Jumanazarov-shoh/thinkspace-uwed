@@ -61,13 +61,13 @@ class RoleAssignRequest(CompatBaseModel):
 
 class MembershipRequestCreate(CompatBaseModel):
     statement: str = Field(..., min_length=10, max_length=2000)
-    chosen_directions: List[str] = Field(..., min_items=1)
+    chosen_directions: List[str] = Field(..., min_length=1)
     student_id: Optional[str] = None
     faculty: Optional[str] = None
     phone: Optional[str] = None
 
 class MembershipRequestReview(CompatBaseModel):
-    action: str = Field(..., regex="^(approve|reject)$")
+    action: str = Field(..., pattern="^(approve|reject)$")
     review_comment: Optional[str] = None
 
 class MembershipRequestResponse(CompatBaseModel):

@@ -113,7 +113,7 @@ class MemberResultResponse(CompatBaseModel):
     criteria_breakdown: List[dict] = []
 
 class ModeratorDecisionCreate(CompatBaseModel):
-    decision: str = Field(..., regex="^(approved|rejected|overridden|returned_to_evaluator)$")
+    decision: str = Field(..., pattern="^(approved|rejected|overridden|returned_to_evaluator)$")
     override_score: Optional[float] = None
     rationale: str = Field(..., min_length=5)
 
@@ -156,7 +156,7 @@ class ReviewRequestCreate(CompatBaseModel):
     reason: str = Field(..., min_length=15, max_length=2000)
 
 class ReviewRequestResolve(CompatBaseModel):
-    action: str = Field(..., regex="^(resolve|reject)$")
+    action: str = Field(..., pattern="^(resolve|reject)$")
     resolution_comment: str = Field(..., min_length=5)
     adjusted_score: Optional[float] = None
 

@@ -212,7 +212,7 @@ class AssignmentResponse(CompatBaseModel):
     active_rubric: Optional[RubricResponse] = None
     my_submission_status: Optional[str] = None
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def populate_aliases(cls, values):
         if not values.get("short_description"):
             values["short_description"] = values.get("description")
