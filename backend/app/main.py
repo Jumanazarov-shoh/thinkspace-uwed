@@ -44,6 +44,14 @@ if os.path.exists(frontend_dist):
 
 app.include_router(api_router)
 
+@app.get("/health")
+def liveness_check():
+    return {
+        "status": "healthy",
+        "app": settings.APP_NAME,
+        "environment": settings.ENVIRONMENT
+    }
+
 @app.get("/")
 def root():
     return {

@@ -49,6 +49,7 @@ backend/uploads/*
 scratch/
 *.log
 backend/*.mjs
+m8_instructions.txt
 
 # IDE & OS
 .vscode/
