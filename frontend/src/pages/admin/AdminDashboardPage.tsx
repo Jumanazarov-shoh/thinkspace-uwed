@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../../locales';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { Assignment, Submission, User } from '../../types';
+import { Assignment, Submission, User, AdminNotificationStatus } from '../../types';
 import { 
   Users, 
   Layers, 
@@ -14,7 +14,14 @@ import {
   AlertCircle,
   ExternalLink,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Bell,
+  Send,
+  Sparkles,
+  Check,
+  X,
+  Radio,
+  SendHorizontal
 } from 'lucide-react';
 
 interface AdminDashboardPageProps {
@@ -23,26 +30,35 @@ interface AdminDashboardPageProps {
 
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNavigateTab }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [notifStatus, setNotifStatus] = useState<AdminNotificationStatus | null>(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMsg, setAnnouncementMsg] = useState('');
+  const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
+  const [processingReminders, setProcessingReminders] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [assList, subList, memList, reqList] = await Promise.all([
+      const [assList, subList, memList, reqList, notif] = await Promise.all([
         api.getAssignments(),
         api.getSubmissionsList(),
         api.listMembers('approved'),
-        api.listMembershipRequests('pending').catch(() => [])
+        api.listMembershipRequests('pending').catch(() => []),
+        api.getAdminNotificationStatus().catch(() => null)
       ]);
       setAssignments(assList);
       setSubmissions(subList);
       setMembers(memList);
       setPendingRequestsCount(reqList.length);
+      setNotifStatus(notif);
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
@@ -53,6 +69,45 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleProcessReminders = async () => {
+    setProcessingReminders(true);
+    setActionSuccessMsg(null);
+    try {
+      const res = await api.processDeadlineReminders();
+      setActionSuccessMsg(
+        `Eslatmalar tekshirildi: ${res.reminders_sent} ta yangi bildirishnoma yuborildi, ${res.assignments_checked} ta topshiriq ko'rib chiqildi (${res.skipped_duplicates} ta takroriy eslatma chetlab o'tildi).`
+      );
+      fetchData();
+    } catch (err: any) {
+      alert(err?.message || 'Eslatmalarni tekshirishda xatolik yuz berdi');
+    } finally {
+      setProcessingReminders(false);
+    }
+  };
+
+  const handleSendAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announcementTitle.trim() || !announcementMsg.trim()) return;
+    setIsSendingAnnouncement(true);
+    setActionSuccessMsg(null);
+    try {
+      const res = await api.sendAdminAnnouncement({
+        title: announcementTitle.trim(),
+        message: announcementMsg.trim(),
+        send_telegram: true,
+      });
+      setActionSuccessMsg(`Rasmiy e'lon muvaffaqiyatli ${res.recipients_count} ta a'zoga yuborildi!`);
+      setShowAnnouncementModal(false);
+      setAnnouncementTitle('');
+      setAnnouncementMsg('');
+      fetchData();
+    } catch (err: any) {
+      alert(err?.message || "E'lon yuborishda xatolik yuz berdi");
+    } finally {
+      setIsSendingAnnouncement(false);
+    }
+  };
 
   const openAssignmentsCount = assignments.filter(a => a.status === 'open').length;
   const pendingReviewsCount = submissions.filter(s => s.status === 'submitted' || s.status === 'under_review').length;
@@ -94,6 +149,22 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
           </button>
         </div>
       </div>
+
+      {/* Action Success Alert */}
+      {actionSuccessMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center space-x-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span className="text-sm font-medium">{actionSuccessMsg}</span>
+          </div>
+          <button
+            onClick={() => setActionSuccessMsg(null)}
+            className="text-emerald-500 hover:text-emerald-700 p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -309,8 +380,170 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
               </button>
             </div>
           </div>
+
+          {/* Notification & Reminder Operations */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-sm text-navy-900">
+                    Notifications & Reminders
+                  </h3>
+                  <p className="text-[11px] text-gray-400">Telegram & In-App dispatch status</p>
+                </div>
+              </div>
+              <span className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Active</span>
+              </span>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                <span className="text-gray-400 block text-[10px] uppercase font-bold">Jami Bildirishnoma</span>
+                <span className="text-base font-bold text-navy-950 font-serif">
+                  {notifStatus?.total_notifications ?? 0}
+                </span>
+              </div>
+              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                <span className="text-gray-400 block text-[10px] uppercase font-bold">Telegram Yetkazilgan</span>
+                <span className="text-base font-bold text-emerald-600 font-serif">
+                  {notifStatus?.telegram_sent_count ?? 0}
+                </span>
+              </div>
+              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                <span className="text-gray-400 block text-[10px] uppercase font-bold">O'qilmagan (In-App)</span>
+                <span className="text-base font-bold text-amber-600 font-serif">
+                  {notifStatus?.unread_notifications ?? 0}
+                </span>
+              </div>
+              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                <span className="text-gray-400 block text-[10px] uppercase font-bold">Yetkazilmadi / O'chirilgan</span>
+                <span className="text-base font-bold text-gray-700 font-serif">
+                  {(notifStatus?.telegram_failed_count ?? 0) + (notifStatus?.telegram_disabled_count ?? 0)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 space-y-2 border-t border-gray-100">
+              <button
+                onClick={handleProcessReminders}
+                disabled={processingReminders}
+                className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg text-xs font-semibold transition border border-blue-200 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${processingReminders ? 'animate-spin' : ''}`} />
+                <span>{processingReminders ? 'Eslatmalar tekshirilmoqda...' : 'Eslatmalarni tekshirish (24h/3h)'}</span>
+              </button>
+
+              {isSuperAdmin && (
+                <button
+                  onClick={() => setShowAnnouncementModal(true)}
+                  className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Rasmiy e'lon yuborish</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Super Admin Broadcast Modal */}
+      {showAnnouncementModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-navy-100 flex items-center justify-center text-navy-900">
+                  <SendHorizontal className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-navy-950 text-base">
+                    Barcha a'zolarga rasmiy e'lon
+                  </h3>
+                  <p className="text-xs text-gray-400">Telegram va In-App tizimi orqali tarqatiladi</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAnnouncementModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendAnnouncement} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                  E'lon sarlavhasi
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Masalan: Muhim seminar yoki muddat o'zgarishi"
+                  value={announcementTitle}
+                  onChange={(e) => setAnnouncementTitle(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-800 focus:border-navy-800 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                  Xabar matni
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Hurmatli ThinkSpace a'zolari, ..."
+                  value={announcementMsg}
+                  onChange={(e) => setAnnouncementMsg(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-800 focus:border-navy-800 outline-none resize-none"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Ushbu e'lon tasdiqlangan barcha ThinkSpace a'zolariga mini-app bildirishnomalarida va Telegram botida yetkaziladi.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAnnouncementModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingAnnouncement || !announcementTitle.trim() || !announcementMsg.trim()}
+                  className="px-4 py-2 text-xs font-medium text-white bg-navy-900 hover:bg-navy-800 rounded-lg transition shadow-sm flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {isSendingAnnouncement ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Yuborilmoqda...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Barchaga yuborish</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

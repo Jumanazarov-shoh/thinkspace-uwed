@@ -21,6 +21,7 @@ class CriterionScoreResponse(CompatBaseModel):
 class EvaluationCreate(CompatBaseModel):
     submission_id: int
     general_feedback: str = Field(..., min_length=5)
+    internal_notes: Optional[str] = None
     is_revision_requested: bool = False
     revision_notes: Optional[str] = None
     is_draft: bool = False
@@ -35,11 +36,81 @@ class EvaluationResponse(CompatBaseModel):
     status: str
     total_score: float
     general_feedback: str
+    internal_notes: Optional[str] = None
     is_revision_requested: bool
     revision_notes: Optional[str] = None
     criterion_scores: List[CriterionScoreResponse] = []
     created_at: datetime
     submitted_at: Optional[datetime] = None
+
+class EvaluatorAssignmentCreate(CompatBaseModel):
+    evaluator_id: int
+
+class EvaluatorAssignmentResponse(CompatBaseModel):
+    id: int
+    submission_id: int
+    evaluator_id: int
+    evaluator_name: Optional[str] = None
+    evaluator_username: Optional[str] = None
+    assigned_by_id: int
+    status: str
+    assigned_at: datetime
+
+class SeniorReviewCreate(CompatBaseModel):
+    recommended_score: float = Field(..., ge=0)
+    rationale: str = Field(..., min_length=5)
+    internal_notes: Optional[str] = None
+    escalate_to_moderator: bool = False
+
+class SeniorReviewResponse(CompatBaseModel):
+    id: int
+    submission_id: int
+    senior_reviewer_id: int
+    senior_reviewer_name: Optional[str] = None
+    recommended_score: float
+    rationale: str
+    internal_notes: Optional[str] = None
+    escalate_to_moderator: bool
+    created_at: datetime
+
+class ModeratorFinalizeCreate(CompatBaseModel):
+    final_score: float = Field(..., ge=0)
+    rationale: str = Field(..., min_length=5)
+
+class SubmissionEvaluationOverviewItem(CompatBaseModel):
+    submission_id: int
+    assignment_id: int
+    assignment_title: str
+    direction: str
+    member_name: str
+    member_id: int
+    submitted_at: Optional[datetime] = None
+    is_late: bool = False
+    submission_status: str
+    review_status: str
+    max_score: float
+    assigned_evaluators: List[dict] = []
+    evaluations_count: int = 0
+    evaluations: List[dict] = []
+    average_score: Optional[float] = None
+    score_difference: Optional[float] = None
+    difference_percentage: Optional[float] = None
+    is_discrepant: bool = False
+    final_score: Optional[float] = None
+
+class MemberResultResponse(CompatBaseModel):
+    assignment_id: int
+    assignment_title: str
+    direction: str
+    submission_id: int
+    review_status: str
+    is_finalized: bool
+    final_score: Optional[float] = None
+    max_score: Optional[float] = None
+    percentage: Optional[float] = None
+    overall_feedback: Optional[str] = None
+    finalized_at: Optional[datetime] = None
+    criteria_breakdown: List[dict] = []
 
 class ModeratorDecisionCreate(CompatBaseModel):
     decision: str = Field(..., regex="^(approved|rejected|overridden|returned_to_evaluator)$")

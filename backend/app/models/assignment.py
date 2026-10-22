@@ -31,8 +31,9 @@ class ThinkSpaceDirection(str, enum.Enum):
 
 class AssignmentStatus(str, enum.Enum):
     DRAFT = "draft"
+    PUBLISHED = "published"
+    OPEN = "open"  # Compatible alias for published
     SCHEDULED = "scheduled"
-    OPEN = "open"
     CLOSED = "closed"
     ARCHIVED = "archived"
 
@@ -47,6 +48,9 @@ class Assignment(Base):
     instructions: Mapped[str] = mapped_column(Text, nullable=False)
     reference_links: Mapped[List[dict]] = mapped_column(JSON, default=list, nullable=False)
     
+    difficulty: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="intermediate")
+    attachment_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
     status: Mapped[str] = mapped_column(String(30), default=AssignmentStatus.DRAFT.value, nullable=False, index=True)
     publish_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
@@ -67,6 +71,18 @@ class Assignment(Base):
     creator: Mapped["User"] = relationship("User", foreign_keys=[created_by_id], lazy="selectin")
     rubrics: Mapped[List["Rubric"]] = relationship("Rubric", back_populates="assignment", cascade="all, delete-orphan", lazy="selectin")
     submissions: Mapped[List["Submission"]] = relationship("Submission", back_populates="assignment", lazy="selectin")
+
+    @property
+    def deadline(self) -> datetime:
+        return self.deadline_at
+
+    @property
+    def published_at(self) -> Optional[datetime]:
+        return self.publish_at
+
+    @property
+    def short_description(self) -> str:
+        return self.description
 
     @property
     def active_rubric(self) -> Optional["Rubric"]:
@@ -104,6 +120,7 @@ class RubricCriterion(Base):
     rubric_id: Mapped[int] = mapped_column(Integer, ForeignKey("rubrics.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    guidance: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     max_points: Mapped[float] = mapped_column(Float, nullable=False)
     weight: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

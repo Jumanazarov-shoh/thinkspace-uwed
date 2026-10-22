@@ -44,6 +44,11 @@ dist-ssr/
 *.sqlite3
 uploads/*
 !uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+scratch/
+*.log
+backend/*.mjs
 
 # IDE & OS
 .vscode/

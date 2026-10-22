@@ -129,7 +129,9 @@ async def run_httpx_polling(token: str):
 
                     elif text.startswith("/tasks"):
                         with SessionLocal() as session:
-                            stmt = select(Assignment).where(Assignment.status == AssignmentStatus.OPEN.value)
+                            stmt = select(Assignment).where(
+                                Assignment.status.in_([AssignmentStatus.PUBLISHED.value, AssignmentStatus.OPEN.value])
+                            )
                             tasks = session.execute(stmt).scalars().all()
 
                         if not tasks:
@@ -175,6 +177,39 @@ async def run_httpx_polling(token: str):
                             "parse_mode": "HTML",
                             "reply_markup": keyboard
                         })
+
+                    elif text.startswith("/profile"):
+                        with SessionLocal() as session:
+                            stmt = select(User).where(User.telegram_id == chat_id)
+                            u = session.execute(stmt).scalar_one_or_none()
+                            if not u:
+                                reply = "Siz ro'yxatdan o'tmagansiz. /start buyrug'ini bosing."
+                            else:
+                                progress = calculate_member_progress(session, u.id)
+                                roles_str = ", ".join([r.role_name for r in u.roles]) if u.roles else "A'zo"
+                                reply = (
+                                    f"👤 <b>A'zo Profili:</b>\n"
+                                    f"• Ism: <b>{u.display_name}</b>\n"
+                                    f"• Holat: <b>{u.status.capitalize()}</b>\n"
+                                    f"• Rollar: <i>{roles_str}</i>\n\n"
+                                    f"📊 <b>Natijalar:</b>\n"
+                                    f"• Jami ball: <b>{progress.total_points}</b>\n"
+                                    f"• O'rtacha foiz: <b>{progress.average_percentage}%</b>\n"
+                                    f"• Baholangan ishlar: <b>{progress.graded_assignments_count} ta</b>\n"
+                                    f"• Ko'rib chiqilayotgan ishlar: <b>{progress.pending_reviews_count} ta</b>\n"
+                                )
+                        keyboard = {
+                            "inline_keyboard": [[{
+                                "text": "🔎 Batafsil (Mini App)",
+                                "web_app": {"url": f"{settings.MINI_APP_URL}/progress"}
+                            }]]
+                        }
+                        await client.post(f"{base_url}/sendMessage", json={
+                            "chat_id": chat_id,
+                            "text": reply,
+                            "parse_mode": "HTML",
+                            "reply_markup": keyboard
+                        })
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -199,13 +234,17 @@ async def start_bot():
 
     # Try standard aiogram 3.x first
     try:
-        from app.bot.bot_instance import get_bot, dp
+        from app.bot.bot_instance import get_bot, dp, AIOGRAM_AVAILABLE
+        if not AIOGRAM_AVAILABLE or not dp:
+            raise RuntimeError("aiogram 3.x not available or disabled")
         from app.bot.handlers.start import router as start_router
         from app.bot.handlers.commands import router as commands_router
         
         dp.include_router(start_router)
         dp.include_router(commands_router)
         bot = get_bot()
+        if not bot:
+            raise RuntimeError("aiogram Bot instance could not be created")
         try:
             await bot.delete_webhook(drop_pending_updates=True)
             bot_info = await bot.get_me()

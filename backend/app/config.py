@@ -2,7 +2,7 @@
 ThinkSpace | UWED Configuration
 Loaded from environment variables with sensible defaults for local development.
 """
-from typing import List, Union
+from typing import List, Union, Optional
 import os
 try:
     from pydantic_settings import BaseSettings
@@ -30,12 +30,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./thinkspace.db"
     
     # Storage & Uploads
+    STORAGE_BACKEND: str = "local"  # "local" or "supabase"
     UPLOAD_DIR: str = "./uploads"
-    MAX_FILE_SIZE_MB: int = 25
+    MAX_FILE_SIZE_MB: int = 10
     ALLOWED_EXTENSIONS: List[str] = [
-        "pdf", "doc", "docx", "txt", "md",
+        "pdf", "docx", "xlsx", "pptx", "txt", "doc", "md",
         "png", "jpg", "jpeg", "webp"
     ]
+    
+    # Supabase (Production)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    SUPABASE_STORAGE_BUCKET: str = "submissions"
     
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"

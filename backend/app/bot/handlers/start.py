@@ -1,9 +1,22 @@
 """
 Telegram Bot /start handler with onboarding and Mini App launching.
 """
-from aiogram import Router, types
-from aiogram.filters import CommandStart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+try:
+    from aiogram import Router, types
+    from aiogram.filters import CommandStart
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+    AIOGRAM_AVAILABLE = True
+except Exception:
+    AIOGRAM_AVAILABLE = False
+    class DummyRouter:
+        def __init__(self, *args, **kwargs): pass
+        def message(self, *args, **kwargs):
+            return lambda fn: fn
+    Router = DummyRouter
+    CommandStart = lambda *args, **kwargs: None
+    types = type("types", (), {"Message": object})
+    InlineKeyboardMarkup = InlineKeyboardButton = WebAppInfo = None
+
 from app.config import settings
 from app.database import SessionLocal
 from app.models.user import UserStatus, RoleEnum

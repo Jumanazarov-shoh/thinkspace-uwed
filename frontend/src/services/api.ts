@@ -13,10 +13,25 @@ import {
   LeaderboardEntry,
   MemberProgress,
   MembershipRequest,
-  RoleName
+  RoleName,
+  MySubmissionSummary,
+  AdminSubmissionOverviewItem,
+  Rubric,
+  RubricCriterion,
+  NotificationItem,
+  NotificationListResponse,
+  NotificationPreference,
+  AdminNotificationStatus,
+  PointTransaction,
+  PersonalRanking,
+  DirectionAnalyticsItem,
+  AdminAnalyticsOverview,
+  AdminMemberPerformanceItem,
+  AdminMemberDetail,
+  ManualPointAdjustmentPayload
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export class ApiError extends Error {
   status: number;
@@ -135,15 +150,68 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  publishAssignment: (id: number) =>
+    request<Assignment>(`/assignments/${id}/publish`, {
+      method: 'POST',
+    }),
+
+  closeAssignment: (id: number) =>
+    request<Assignment>(`/assignments/${id}/close`, {
+      method: 'POST',
+    }),
+
+  archiveAssignment: (id: number) =>
+    request<Assignment>(`/assignments/${id}/archive`, {
+      method: 'POST',
+    }),
+
+  revertAssignmentToDraft: (id: number) =>
+    request<Assignment>(`/assignments/${id}/draft`, {
+      method: 'POST',
+    }),
+
+  deleteAssignment: (id: number) =>
+    request<{ success: boolean; message: string }>(`/assignments/${id}`, {
+      method: 'DELETE',
+    }),
+
   // Submissions
+  saveSubmissionDraft: (assignmentId: number, formData: FormData) =>
+    request<Submission>(`/submissions/assignment/${assignmentId}/draft`, {
+      method: 'POST',
+      body: formData,
+    }),
+
+  submitAssignmentWork: (assignmentId: number, formData: FormData) =>
+    request<Submission>(`/submissions/assignment/${assignmentId}/submit`, {
+      method: 'POST',
+      body: formData,
+    }),
+
   submitWork: (assignmentId: number, formData: FormData) =>
-    request<Submission>(`/submissions/assignment/${assignmentId}`, {
+    request<Submission>(`/submissions/assignment/${assignmentId}/submit`, {
       method: 'POST',
       body: formData,
     }),
 
   getMySubmission: (assignmentId: number) =>
     request<Submission | null>(`/submissions/assignment/${assignmentId}/my-submission`),
+
+  getMySubmissions: () =>
+    request<MySubmissionSummary[]>('/submissions/my-submissions'),
+
+  deleteSubmissionAttachment: (submissionId: number, fileId: number) =>
+    request<{ status: string; message: string }>(`/submissions/${submissionId}/attachments/${fileId}`, {
+      method: 'DELETE',
+    }),
+
+  getAdminSubmissionsOverview: (params?: { assignment_id?: number; status_filter?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.assignment_id) q.set('assignment_id', params.assignment_id.toString());
+    if (params?.status_filter) q.set('status_filter', params.status_filter);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return request<AdminSubmissionOverviewItem[]>(`/submissions/admin/overview${qs}`);
+  },
 
   getSubmissionsList: (params?: { assignment_id?: number; status_filter?: string }) => {
     const q = new URLSearchParams();
@@ -206,11 +274,160 @@ export const api = {
     }),
 
   // Leaderboard & Progress
-  getLeaderboard: (limit: number = 50) =>
-    request<LeaderboardEntry[]>(`/leaderboard?limit=${limit}`),
+  getLeaderboard: (direction?: string, limit: number = 50) =>
+    request<LeaderboardEntry[]>(`/leaderboard?limit=${limit}${direction ? `&direction=${encodeURIComponent(direction)}` : ''}`),
+
+  getMyRank: () => request<PersonalRanking>('/leaderboard/me/rank'),
+
+  getMyPointsHistory: () => request<PointTransaction[]>('/leaderboard/me/points'),
 
   getMyProgress: () => request<MemberProgress>('/leaderboard/my-progress'),
 
   getMemberProgress: (userId: number) =>
     request<MemberProgress>(`/leaderboard/member/${userId}/progress`),
+
+  // Milestone 5: Rubrics, Evaluators, Senior Review & Moderation
+  getAssignmentRubric: (assignmentId: number) =>
+    request<Rubric>(`/assignments/${assignmentId}/rubric`),
+
+  addRubricCriterion: (assignmentId: number, data: { title: string; description?: string; guidance?: string; max_points: number; order_index?: number }) =>
+    request<RubricCriterion>(`/assignments/${assignmentId}/rubric/criteria`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateRubricCriterion: (assignmentId: number, criterionId: number, data: { title?: string; description?: string; guidance?: string; max_points?: number; order_index?: number }) =>
+    request<RubricCriterion>(`/assignments/${assignmentId}/rubric/criteria/${criterionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteRubricCriterion: (assignmentId: number, criterionId: number) =>
+    request<{ success: boolean; message: string }>(`/assignments/${assignmentId}/rubric/criteria/${criterionId}`, {
+      method: 'DELETE',
+    }),
+
+  getEvaluatorAssigned: (statusFilter?: string) =>
+    request<any[]>(`/evaluations/assigned${statusFilter ? `?status_filter=${statusFilter}` : ''}`),
+
+  getEvaluationContext: (submissionId: number) =>
+    request<any>(`/evaluations/submission/${submissionId}/context`),
+
+  submitOrDraftEvaluation: (data: {
+    submission_id: number;
+    general_feedback: string;
+    internal_notes?: string;
+    is_draft?: boolean;
+    criterion_scores: Array<{ criterion_id: number; score: number; comment?: string }>;
+  }) =>
+    request<Evaluation>('/evaluations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  assignEvaluator: (submissionId: number, evaluatorId: number) =>
+    request<any>(`/evaluations/assignments/${submissionId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ evaluator_id: evaluatorId }),
+    }),
+
+  removeEvaluator: (submissionId: number, evaluatorId: number) =>
+    request<{ success: boolean; message: string }>(`/evaluations/assignments/${submissionId}/evaluators/${evaluatorId}`, {
+      method: 'DELETE',
+    }),
+
+  getSeniorReviewQueue: () =>
+    request<any[]>('/evaluations/senior-queue'),
+
+  submitSeniorReview: (submissionId: number, data: {
+    recommended_score: number;
+    rationale: string;
+    internal_notes?: string;
+    escalate_to_moderator?: boolean;
+  }) =>
+    request<any>(`/evaluations/submissions/${submissionId}/senior-review`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getModeratorQueue: () =>
+    request<any[]>('/evaluations/moderator-queue'),
+
+  finalizeEvaluation: (submissionId: number, data: {
+    final_score: number;
+    rationale: string;
+  }) =>
+    request<PublishedGrade>(`/evaluations/submissions/${submissionId}/finalize`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getAdminEvaluationsOverview: (params?: { review_status?: string; direction?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.review_status) q.set('review_status', params.review_status);
+    if (params?.direction) q.set('direction', params.direction);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return request<any[]>(`/evaluations/admin/overview${qs}`);
+  },
+
+  getMemberAssignmentResult: (assignmentId: number) =>
+    request<any>(`/evaluations/member/assignment/${assignmentId}/result`),
+
+  // Milestone 6: Notifications & Reminders
+  getNotifications: (unreadOnly: boolean = false, limit: number = 50) =>
+    request<NotificationListResponse>(`/notifications?unread_only=${unreadOnly}&limit=${limit}`),
+
+  markNotificationRead: (id: number) =>
+    request<NotificationItem>(`/notifications/${id}/read`, {
+      method: 'POST',
+    }),
+
+  markAllNotificationsRead: () =>
+    request<{ success: boolean; marked_count: number }>('/notifications/read-all', {
+      method: 'POST',
+    }),
+
+  getNotificationPreferences: () =>
+    request<NotificationPreference>('/notifications/preferences'),
+
+  updateNotificationPreferences: (data: { telegram_notifications_enabled?: boolean; deadline_reminders_enabled?: boolean }) =>
+    request<NotificationPreference>('/notifications/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  getAdminNotificationStatus: () =>
+    request<AdminNotificationStatus>('/notifications/admin/status'),
+
+  sendAdminAnnouncement: (data: { title: string; message: string; send_telegram?: boolean }) =>
+    request<{ success: boolean; recipients_count: number; title: string }>('/notifications/admin/announcement', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  processDeadlineReminders: () =>
+    request<{ assignments_checked: number; reminders_sent: number; skipped_duplicates: number }>('/notifications/admin/process-reminders', {
+      method: 'POST',
+    }),
+
+  // Milestone 7: Admin Analytics & Point Adjustments
+  getAdminAnalyticsOverview: (dateRange: string = 'all_time') =>
+    request<AdminAnalyticsOverview>(`/admin/analytics/overview?date_range=${dateRange}`),
+
+  getAdminDirectionAnalytics: () =>
+    request<DirectionAnalyticsItem[]>('/admin/analytics/directions'),
+
+  getAdminMembersAnalytics: (search?: string, sortBy?: string, order: string = 'desc') =>
+    request<AdminMemberPerformanceItem[]>(
+      `/admin/analytics/members?order=${order}${search ? `&search=${encodeURIComponent(search)}` : ''}${sortBy ? `&sort_by=${sortBy}` : ''}`
+    ),
+
+  getAdminMemberDetail: (userId: number) =>
+    request<AdminMemberDetail>(`/admin/analytics/members/${userId}`),
+
+  adjustMemberPoints: (data: ManualPointAdjustmentPayload) =>
+    request<PointTransaction>('/admin/points/adjust', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };

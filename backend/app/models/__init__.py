@@ -11,11 +11,24 @@ from app.models.evaluation import (
     PublishedGrade,
     GradeRevision,
     ReviewRequest,
+    EvaluatorAssignment,
+    SeniorReview,
     EvaluationStatus,
+    ReviewStatus,
     ModeratorDecisionType,
     ReviewRequestStatus
 )
 from app.models.audit import AuditLog, NotificationRecord
+from app.models.notification import (
+    Notification,
+    NotificationPreference,
+    DeadlineReminderLog,
+    NotificationType,
+)
+from app.models.points import (
+    PointTransaction,
+    PointTransactionType,
+)
 
 __all__ = [
     "User",
@@ -38,9 +51,18 @@ __all__ = [
     "PublishedGrade",
     "GradeRevision",
     "ReviewRequest",
+    "EvaluatorAssignment",
+    "SeniorReview",
     "EvaluationStatus",
+    "ReviewStatus",
     "ModeratorDecisionType",
     "ReviewRequestStatus",
     "AuditLog",
     "NotificationRecord",
+    "Notification",
+    "NotificationPreference",
+    "DeadlineReminderLog",
+    "NotificationType",
+    "PointTransaction",
+    "PointTransactionType",
 ]

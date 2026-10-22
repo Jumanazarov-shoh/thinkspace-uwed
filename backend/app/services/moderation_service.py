@@ -92,10 +92,13 @@ def publish_final_grade(
         overall_feedback = f"Moderator xulosasi: {override_decision.rationale}"
     else:
         version_id = submission.current_version_id
-        valid_evals = [
-            e for e in submission.evaluations 
-            if e.submission_version_id == version_id and e.status == EvaluationStatus.SUBMITTED.value
-        ]
+        eval_stmt = select(Evaluation).where(
+            Evaluation.submission_id == submission_id,
+            Evaluation.status == EvaluationStatus.SUBMITTED.value
+        )
+        if version_id:
+            eval_stmt = eval_stmt.where(Evaluation.submission_version_id == version_id)
+        valid_evals = list(session.execute(eval_stmt).scalars().all())
         if not valid_evals:
             raise HTTPException(status_code=400, detail="Baholash yakunlanmagan. Hech bo'lmaganda bitta to'liq baho talab etiladi.")
 
@@ -129,6 +132,15 @@ def publish_final_grade(
     ))
 
     session.flush()
+
+    # Milestone 7: Award transparent points via Points Engine
+    try:
+        from app.services.points_service import award_assignment_points
+        award_assignment_points(session, submission, assignment, published_grade)
+    except Exception as e:
+        import logging
+        logging.getLogger("thinkspace.moderation").warning(f"Points award notice: {e}")
+
     return published_grade
 
 def revise_published_grade(
@@ -170,6 +182,15 @@ def revise_published_grade(
     ))
 
     session.flush()
+
+    # Milestone 7: Adjust points ledger with auditable score correction
+    try:
+        from app.services.points_service import record_score_correction
+        record_score_correction(session, grade, previous_score, new_score, reason, changed_by_id)
+    except Exception as e:
+        import logging
+        logging.getLogger("thinkspace.moderation").warning(f"Points correction notice: {e}")
+
     return revision
 
 def submit_review_request(

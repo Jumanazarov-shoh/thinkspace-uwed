@@ -8,6 +8,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { HomePage } from './pages/miniapp/HomePage';
 import { TasksPage } from './pages/miniapp/TasksPage';
 import { TaskDetailPage } from './pages/miniapp/TaskDetailPage';
+import { MySubmissionsPage } from './pages/miniapp/MySubmissionsPage';
 import { LeaderboardPage } from './pages/miniapp/LeaderboardPage';
 import { ProgressPage } from './pages/miniapp/ProgressPage';
 import { ProfilePage } from './pages/miniapp/ProfilePage';
@@ -15,6 +16,7 @@ import { ProfilePage } from './pages/miniapp/ProfilePage';
 // Admin Pages
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminAssignmentsPage } from './pages/admin/AdminAssignmentsPage';
+import { AdminSubmissionsPage } from './pages/admin/AdminSubmissionsPage';
 import { AdminReviewWorkspacePage } from './pages/admin/AdminReviewWorkspacePage';
 import { AdminModerationPage } from './pages/admin/AdminModerationPage';
 import { AdminMembersPage } from './pages/admin/AdminMembersPage';
@@ -149,6 +151,9 @@ export const App: React.FC = () => {
         {adminTab === 'assignments' && (
           <AdminAssignmentsPage />
         )}
+        {adminTab === 'submissions' && (
+          <AdminSubmissionsPage />
+        )}
         {adminTab === 'workspace' && (
           <AdminReviewWorkspacePage initialSubmissionId={workspaceSubmissionId} />
         )}
@@ -174,6 +179,7 @@ export const App: React.FC = () => {
         setMiniAppTab(tab);
       }}
       onOpenAdmin={() => setViewMode('admin')}
+      onSelectAssignment={handleSelectAssignment}
     >
       {miniAppTab === 'home' && (
         <HomePage
@@ -183,13 +189,24 @@ export const App: React.FC = () => {
       )}
 
       {miniAppTab === 'tasks' && (
-        <TasksPage onSelectAssignment={handleSelectAssignment} />
+        <TasksPage 
+          onSelectAssignment={handleSelectAssignment} 
+          onViewMySubmissions={() => setMiniAppTab('my_submissions')}
+        />
+      )}
+
+      {miniAppTab === 'my_submissions' && (
+        <MySubmissionsPage
+          onBack={handleBackToTasks}
+          onSelectAssignment={handleSelectAssignment}
+        />
       )}
 
       {miniAppTab === 'task_detail' && selectedAssignmentId && (
         <TaskDetailPage
           assignmentId={selectedAssignmentId}
           onBack={handleBackToTasks}
+          onViewMySubmissions={() => setMiniAppTab('my_submissions')}
         />
       )}
 

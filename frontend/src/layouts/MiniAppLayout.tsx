@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../locales';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
+import { NotificationCenterModal } from '../components/NotificationCenterModal';
 import { 
   Home, 
   BookOpen, 
@@ -8,13 +10,15 @@ import {
   TrendingUp, 
   User as UserIcon, 
   ShieldCheck, 
-  Globe 
+  Globe,
+  Bell
 } from 'lucide-react';
 
 interface MiniAppLayoutProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
   onOpenAdmin?: () => void;
+  onSelectAssignment?: (id: number) => void;
   children: React.ReactNode;
 }
 
@@ -22,10 +26,28 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
   currentTab,
   onSelectTab,
   onOpenAdmin,
+  onSelectAssignment,
   children
 }) => {
   const { t, language, setLanguage } = useTranslation();
   const { user, isStaff, loginAs } = useAuth();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnreadCount = async () => {
+    try {
+      const data = await api.getNotifications(false, 1);
+      setUnreadCount(data.unread_count);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    refreshUnreadCount();
+    const interval = setInterval(refreshUnreadCount, 30000); // 30s poll
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     { id: 'home', label: t.nav.home, icon: Home },
@@ -54,6 +76,20 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* Notification Bell */}
+          <button
+            onClick={() => setIsNotificationOpen(true)}
+            title="Xabarnomalar"
+            className="relative p-1.5 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-gray-200 hover:text-white border border-gray-600/50 transition"
+          >
+            <Bell className="w-4 h-4 text-gray-200" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse border border-navy-950">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
           {/* Language Switcher */}
           <button
             onClick={() => setLanguage(language === 'uz' ? 'en' : 'uz')}
@@ -108,6 +144,14 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
           );
         })}
       </nav>
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+        onNavigateToAssignment={onSelectAssignment}
+        onNotificationsUpdated={refreshUnreadCount}
+      />
     </div>
   );
 };

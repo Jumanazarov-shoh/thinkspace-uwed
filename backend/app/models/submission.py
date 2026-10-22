@@ -6,6 +6,7 @@ import enum
 from typing import List, Optional
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -20,7 +21,10 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 class SubmissionStatus(str, enum.Enum):
+    DRAFT = "draft"
     SUBMITTED = "submitted"
+    LATE = "late"
+    LOCKED = "locked"
     UNDER_REVIEW = "under_review"
     REVISION_REQUESTED = "revision_requested"
     RESUBMITTED = "resubmitted"
@@ -36,7 +40,10 @@ class Submission(Base):
     assignment_id: Mapped[int] = mapped_column(Integer, ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     current_version_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    status: Mapped[str] = mapped_column(String(35), default=SubmissionStatus.SUBMITTED.value, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(35), default=SubmissionStatus.DRAFT.value, nullable=False, index=True)
+    review_status: Mapped[str] = mapped_column(String(35), default="awaiting_evaluation", nullable=False, index=True)
+    is_late: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
@@ -55,6 +62,8 @@ class Submission(Base):
         lazy="selectin"
     )
     evaluations: Mapped[List["Evaluation"]] = relationship("Evaluation", back_populates="submission", lazy="selectin")
+    evaluator_assignments: Mapped[List["EvaluatorAssignment"]] = relationship("EvaluatorAssignment", back_populates="submission", cascade="all, delete-orphan", lazy="selectin")
+    senior_reviews: Mapped[List["SeniorReview"]] = relationship("SeniorReview", back_populates="submission", cascade="all, delete-orphan", lazy="selectin")
     published_grade: Mapped[Optional["PublishedGrade"]] = relationship("PublishedGrade", back_populates="submission", uselist=False, lazy="selectin")
     moderator_decisions: Mapped[List["ModeratorDecision"]] = relationship("ModeratorDecision", back_populates="submission", lazy="selectin")
 

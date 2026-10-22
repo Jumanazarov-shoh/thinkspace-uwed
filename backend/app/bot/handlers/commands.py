@@ -1,9 +1,22 @@
 """
 Telegram Bot helper commands: /help, /tasks, /profile, /leaderboard.
 """
-from aiogram import Router, types
-from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+try:
+    from aiogram import Router, types
+    from aiogram.filters import Command
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+    AIOGRAM_AVAILABLE = True
+except Exception:
+    AIOGRAM_AVAILABLE = False
+    class DummyRouter:
+        def __init__(self, *args, **kwargs): pass
+        def message(self, *args, **kwargs):
+            return lambda fn: fn
+    Router = DummyRouter
+    Command = lambda *args, **kwargs: None
+    types = type("types", (), {"Message": object})
+    InlineKeyboardMarkup = InlineKeyboardButton = WebAppInfo = None
+
 from sqlalchemy import select
 from app.config import settings
 from app.database import SessionLocal
@@ -30,7 +43,11 @@ async def handle_help(message: types.Message):
 @router.message(Command("tasks"))
 async def handle_tasks(message: types.Message):
     with SessionLocal() as session:
-        stmt = select(Assignment).where(Assignment.status == AssignmentStatus.OPEN.value).order_by(Assignment.deadline_at.asc())
+        stmt = (
+            select(Assignment)
+            .where(Assignment.status.in_([AssignmentStatus.PUBLISHED.value, AssignmentStatus.OPEN.value]))
+            .order_by(Assignment.deadline_at.asc())
+        )
         result = session.execute(stmt)
         tasks = result.scalars().all()
 

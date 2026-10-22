@@ -21,8 +21,21 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 class EvaluationStatus(str, enum.Enum):
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
     DRAFT = "draft"
     SUBMITTED = "submitted"
+    SUPERSEDED = "superseded"
+    CANCELLED = "cancelled"
+
+class ReviewStatus(str, enum.Enum):
+    AWAITING_EVALUATION = "awaiting_evaluation"
+    UNDER_EVALUATION = "under_evaluation"
+    EVALUATION_COMPLETE = "evaluation_complete"
+    NEEDS_REVIEW = "needs_review"
+    SENIOR_REVIEW = "senior_review"
+    MODERATOR_REVIEW = "moderator_review"
+    FINALIZED = "finalized"
 
 class ModeratorDecisionType(str, enum.Enum):
     APPROVED = "approved"
@@ -47,6 +60,7 @@ class Evaluation(Base):
     status: Mapped[str] = mapped_column(String(30), default=EvaluationStatus.DRAFT.value, nullable=False)
     total_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     general_feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    internal_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     is_revision_requested: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     revision_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -154,3 +168,37 @@ class ReviewRequest(Base):
     published_grade: Mapped["PublishedGrade"] = relationship("PublishedGrade", back_populates="review_requests")
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="selectin")
     resolver: Mapped[Optional["User"]] = relationship("User", foreign_keys=[resolver_id], lazy="selectin")
+
+class EvaluatorAssignment(Base):
+    __tablename__ = "evaluator_assignments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    submission_id: Mapped[int] = mapped_column(Integer, ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False, index=True)
+    evaluator_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    assigned_by_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="assigned", nullable=False)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("submission_id", "evaluator_id", name="uq_submission_evaluator_assignment"),
+    )
+
+    submission: Mapped["Submission"] = relationship("Submission", back_populates="evaluator_assignments")
+    evaluator: Mapped["User"] = relationship("User", foreign_keys=[evaluator_id], lazy="selectin")
+    assigned_by: Mapped["User"] = relationship("User", foreign_keys=[assigned_by_id], lazy="selectin")
+
+class SeniorReview(Base):
+    __tablename__ = "senior_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    submission_id: Mapped[int] = mapped_column(Integer, ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False, index=True)
+    senior_reviewer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    recommended_score: Mapped[float] = mapped_column(Float, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    internal_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    escalate_to_moderator: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    submission: Mapped["Submission"] = relationship("Submission", back_populates="senior_reviews")
+    senior_reviewer: Mapped["User"] = relationship("User", foreign_keys=[senior_reviewer_id], lazy="selectin")

@@ -239,3 +239,15 @@ def test_membership_application_and_approval(
     audit = db_session.execute(select(AuditLog).where(AuditLog.entity_id == str(request_id))).scalar_one_or_none()
     assert audit is not None
     assert audit.action == "membership_request_approve"
+
+
+def test_telegram_bot_handlers_and_runner_resilience():
+    """Verify that bot handlers, bot instance, and runner import safely and handle missing tokens gracefully."""
+    import asyncio
+    from app.bot.runner import start_bot
+    from app.bot.handlers import start, commands
+    assert hasattr(start, "handle_start")
+    assert hasattr(commands, "handle_help")
+    # Verify runner gracefully rejects unconfigured/dummy bot token
+    result = asyncio.run(start_bot())
+    assert result is False

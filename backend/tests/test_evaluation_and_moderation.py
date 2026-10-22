@@ -96,7 +96,7 @@ def test_full_evaluation_to_published_grade_and_appeal_flow(
         f"/api/moderation/submissions/{submission_id}/publish-grade",
         headers=mod_headers
     )
-    assert pub_res.status_code == 200
+    assert pub_res.status_code == 200, f"Error: {pub_res.status_code} - {pub_res.text}"
     pub_data = pub_res.json()
     assert pub_data["final_score"] == 90.0
     assert pub_data["percentage"] == 90.0

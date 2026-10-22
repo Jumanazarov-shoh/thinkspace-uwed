@@ -11,7 +11,8 @@ import {
   Smartphone, 
   LogOut, 
   Globe,
-  Sparkles 
+  Sparkles,
+  FolderOpen
 } from 'lucide-react';
 import { RoleName } from '../types';
 
@@ -34,6 +35,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const menuItems = [
     { id: 'dashboard', label: t.nav.adminDashboard, icon: LayoutDashboard },
     { id: 'assignments', label: t.nav.adminAssignments, icon: Layers },
+    { id: 'submissions', label: "Topshirilgan ishlar", icon: FolderOpen },
     { id: 'workspace', label: t.nav.adminWorkspace, icon: FileCheck2 },
     { id: 'moderation', label: t.nav.adminModeration, icon: SlidersHorizontal },
     { id: 'members', label: t.nav.adminMembers, icon: Users },
