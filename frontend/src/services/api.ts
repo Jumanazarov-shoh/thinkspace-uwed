@@ -127,6 +127,11 @@ export const api = {
       method: 'DELETE',
     }),
 
+  approveMember: (userId: number) =>
+    request<User>(`/members/${userId}/approve`, {
+      method: 'POST',
+    }),
+
   // Assignments
   getAssignments: (params?: { direction?: string; status?: string }) => {
     const q = new URLSearchParams();

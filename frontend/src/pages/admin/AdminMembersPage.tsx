@@ -95,6 +95,20 @@ export const AdminMembersPage: React.FC = () => {
     }
   };
 
+  const handleApproveMember = async (userId: number) => {
+    setActionLoading(true);
+    setMessage(null);
+    try {
+      await api.approveMember(userId);
+      setMessage({ type: 'success', text: "Foydalanuvchi muvaffaqiyatli tasdiqlandi (Member approved)." });
+      fetchData();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Tasdiqlashda xatolik yuz berdi.' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredMembers = members.filter((m) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -302,13 +316,25 @@ export const AdminMembersPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${
-                        m.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
-                        m.status === 'suspended' ? 'bg-red-100 text-red-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {m.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-medium capitalize ${
+                          m.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                          m.status === 'suspended' ? 'bg-red-100 text-red-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {m.status}
+                        </span>
+                        {m.status === 'pending' && isSuperAdmin && (
+                          <button
+                            onClick={() => handleApproveMember(m.id)}
+                            disabled={actionLoading}
+                            className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-semibold shadow-xs transition"
+                            title="Tasdiqlash (Approve)"
+                          >
+                            ✓ Approve
+                          </button>
+                        )}
+                      </div>
                     </td>
                     {isSuperAdmin && (
                       <td className="py-4 px-4 text-right">

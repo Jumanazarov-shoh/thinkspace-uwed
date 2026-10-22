@@ -120,12 +120,47 @@ def assign_user_role(
 
     assign_role_to_user(db, user_id, payload.role_name, granted_by_id=current_user.id)
 
+    # When a role is assigned by Super Admin, automatically approve the user if they were pending
+    if user.status == UserStatus.PENDING.value:
+        user.status = UserStatus.APPROVED.value
+
+    # Ensure user also has the base member role
+    if payload.role_name != RoleEnum.MEMBER.value and not user.has_role(RoleEnum.MEMBER.value):
+        assign_role_to_user(db, user_id, RoleEnum.MEMBER.value, granted_by_id=current_user.id)
+
     audit = AuditLog(
         user_id=current_user.id,
         action="role_assigned",
         entity_type="user_role",
         entity_id=str(user_id),
         details={"role_name": payload.role_name, "target_user_id": user_id}
+    )
+    db.add(audit)
+
+    db.commit()
+    db.refresh(user)
+    return UserResponse.model_validate(user)
+
+
+@router.post("/{user_id}/approve", response_model=UserResponse)
+def approve_member_directly(
+    user_id: int,
+    current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
+    db: Session = Depends(get_db)
+):
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+
+    user.status = UserStatus.APPROVED.value
+    assign_role_to_user(db, user_id, RoleEnum.MEMBER.value, granted_by_id=current_user.id)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="user_approved_directly",
+        entity_type="user",
+        entity_id=str(user_id),
+        details={"target_user_id": user_id, "approved_by": current_user.display_name}
     )
     db.add(audit)
 
