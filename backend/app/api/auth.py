@@ -18,11 +18,11 @@ def authenticate_telegram(
     payload: TelegramAuthRequest,
     db: Session = Depends(get_db)
 ):
-    auth_result = verify_telegram_init_data(payload.init_data)
+    auth_result, error_reason = verify_telegram_init_data(payload.init_data)
     if not auth_result or not auth_result.get("user"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Telegram autentifikatsiyasi muvaffaqiyatsiz bo'ldi (Invalid Telegram signature)",
+            detail=error_reason or "Telegram autentifikatsiyasi muvaffaqiyatsiz bo'ldi (Invalid Telegram signature)",
         )
 
     tg_user = auth_result["user"]
