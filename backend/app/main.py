@@ -11,6 +11,8 @@ from app.config import settings
 from app.database import create_tables
 from app.api import api_router
 
+import asyncio
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -18,7 +20,40 @@ async def lifespan(app: FastAPI):
         create_tables()
     except Exception as e:
         print(f"[lifespan] create_tables notice: {e}")
+
+    # Launch background Telegram bot runner if configured
+    bot_task = None
+    if settings.TELEGRAM_BOT_TOKEN and not settings.TELEGRAM_BOT_TOKEN.startswith("dummy_"):
+        try:
+            from app.bot.runner import start_bot
+            bot_task = asyncio.create_task(start_bot())
+            print("[lifespan] Background Telegram bot task launched.")
+        except Exception as e:
+            print(f"[lifespan] Could not launch Telegram bot: {e}")
+
+    # Periodic background reminder processor (every 30 minutes)
+    async def periodic_reminders():
+        while True:
+            try:
+                await asyncio.sleep(1800)
+                from app.database import SessionLocal
+                from app.services.notification_service import process_deadline_reminders
+                with SessionLocal() as db:
+                    res = process_deadline_reminders(session=db)
+                    print(f"[lifespan] Processed deadline reminders: {res}")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                print(f"[lifespan] Periodic reminder processor notice: {e}")
+
+    reminder_task = asyncio.create_task(periodic_reminders())
+
     yield
+
+    if bot_task:
+        bot_task.cancel()
+    if reminder_task:
+        reminder_task.cancel()
 
 app = FastAPI(
     title=settings.APP_NAME,
