@@ -43,7 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const clearAuthError = () => setAuthError(null);
+  const clearAuthError = () => {
+    localStorage.removeItem('thinkspace_token');
+    setAuthError(null);
+  };
 
   const refreshUser = async () => {
     try {
@@ -77,28 +80,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
-      // Notify Telegram WebApp is ready and expand
+      // 1. If running inside Telegram Mini App, prioritize fresh Telegram initData
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
 
         const initData = window.Telegram.WebApp.initData;
-        if (initData && !token) {
+        if (initData) {
           try {
             const res = await api.authenticateTelegram(initData);
             localStorage.setItem('thinkspace_token', res.access_token);
             setToken(res.access_token);
             setUser(res.user);
+            setAuthError(null);
             setLoading(false);
             return;
           } catch (e: any) {
             console.warn('Telegram initData authentication failed:', e);
+            localStorage.removeItem('thinkspace_token');
             setAuthError(e.message || 'Telegram autentifikatsiyasi tasdiqlanmadi (Invalid or expired Telegram session).');
+            setLoading(false);
+            return;
           }
         }
       }
 
-      // Check existing token
+      // 2. If opened outside Telegram, check existing saved token
       const savedToken = localStorage.getItem('thinkspace_token');
       if (savedToken) {
         try {

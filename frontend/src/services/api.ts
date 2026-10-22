@@ -31,7 +31,7 @@ import {
   ManualPointAdjustmentPayload
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://thinkspace-uwed.onrender.com/api';
 
 export class ApiError extends Error {
   status: number;
