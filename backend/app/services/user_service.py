@@ -51,6 +51,16 @@ def get_or_create_user_from_telegram(
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.EVALUATOR.value))
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.MEMBER.value))
             session.flush()
+        else:
+            # Auto-create pending membership application for new non-admin user
+            req = MembershipRequest(
+                user_id=user.id,
+                statement="Platformaga a'zo bo'lish arizasi (Telegram)",
+                chosen_directions=["Think & Read", "Think & Analyze"],
+                status=UserStatus.PENDING.value
+            )
+            session.add(req)
+            session.flush()
     else:
         user.first_name = first_name
         user.last_name = last_name
@@ -63,6 +73,23 @@ def get_or_create_user_from_telegram(
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.EVALUATOR.value))
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.MEMBER.value))
             session.flush()
+        elif not is_super_admin and user.status == UserStatus.PENDING.value:
+            # Verify existing pending user has a pending membership request
+            has_pending = session.execute(
+                select(MembershipRequest).where(
+                    MembershipRequest.user_id == user.id,
+                    MembershipRequest.status == UserStatus.PENDING.value
+                )
+            ).scalar_one_or_none()
+            if not has_pending:
+                req = MembershipRequest(
+                    user_id=user.id,
+                    statement="Platformaga a'zo bo'lish arizasi (Telegram)",
+                    chosen_directions=["Think & Read", "Think & Analyze"],
+                    status=UserStatus.PENDING.value
+                )
+                session.add(req)
+                session.flush()
 
     return user
 
@@ -140,8 +167,9 @@ def review_membership_request(
     if not user:
         return None
 
+    now = datetime.now(timezone.utc)
     req.reviewed_by_id = reviewer_id
-    req.reviewed_at = datetime.now(timezone.utc)
+    req.reviewed_at = now
     req.review_comment = comment
 
     if action == "approve":
@@ -162,3 +190,76 @@ def review_membership_request(
     session.add(audit)
     session.flush()
     return req
+
+def approve_user_directly(
+    session: Session,
+    user_id: int,
+    reviewer_id: int,
+    comment: Optional[str] = None
+) -> Optional[User]:
+    user = get_user_by_id(session, user_id)
+    if not user:
+        return None
+        
+    user.status = UserStatus.APPROVED.value
+    assign_role_to_user(session, user_id, RoleEnum.MEMBER.value, granted_by_id=reviewer_id)
+
+    # Synchronize all pending membership requests for this user
+    stmt = select(MembershipRequest).where(
+        MembershipRequest.user_id == user_id,
+        MembershipRequest.status == UserStatus.PENDING.value
+    )
+    reqs = session.execute(stmt).scalars().all()
+    now = datetime.now(timezone.utc)
+    for r in reqs:
+        r.status = UserStatus.APPROVED.value
+        r.reviewed_by_id = reviewer_id
+        r.reviewed_at = now
+        r.review_comment = comment or "Directly approved by admin"
+
+    audit = AuditLog(
+        user_id=reviewer_id,
+        action="user_approved_directly",
+        entity_type="user",
+        entity_id=str(user_id),
+        details={"target_user_id": user_id, "comment": comment}
+    )
+    session.add(audit)
+    session.flush()
+    return user
+
+def reject_user_directly(
+    session: Session,
+    user_id: int,
+    reviewer_id: int,
+    comment: Optional[str] = None
+) -> Optional[User]:
+    user = get_user_by_id(session, user_id)
+    if not user:
+        return None
+        
+    user.status = UserStatus.REJECTED.value
+
+    # Synchronize all pending membership requests for this user
+    stmt = select(MembershipRequest).where(
+        MembershipRequest.user_id == user_id,
+        MembershipRequest.status == UserStatus.PENDING.value
+    )
+    reqs = session.execute(stmt).scalars().all()
+    now = datetime.now(timezone.utc)
+    for r in reqs:
+        r.status = UserStatus.REJECTED.value
+        r.reviewed_by_id = reviewer_id
+        r.reviewed_at = now
+        r.review_comment = comment or "Directly rejected by admin"
+
+    audit = AuditLog(
+        user_id=reviewer_id,
+        action="user_rejected_directly",
+        entity_type="user",
+        entity_id=str(user_id),
+        details={"target_user_id": user_id, "comment": comment}
+    )
+    session.add(audit)
+    session.flush()
+    return user

@@ -4,7 +4,7 @@ Member management, application review, and role assignment endpoints.
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.api.deps import get_current_user, require_roles
 from app.models.user import User, MembershipRequest, RoleEnum, UserStatus
@@ -20,6 +20,8 @@ from app.schemas.user import (
 from app.services.user_service import (
     submit_membership_request,
     review_membership_request,
+    approve_user_directly,
+    reject_user_directly,
     assign_role_to_user,
     revoke_role_from_user,
     get_user_by_id,
@@ -52,8 +54,33 @@ def list_membership_requests(
     current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
     db: Session = Depends(get_db)
 ):
-    stmt = select(MembershipRequest)
-    if status_filter:
+    # Auto-sync any users with pending status who lack a pending membership request record
+    pending_users = db.execute(
+        select(User).where(User.status == UserStatus.PENDING.value)
+    ).scalars().all()
+    
+    synced = False
+    for u in pending_users:
+        has_pending_req = db.execute(
+            select(MembershipRequest).where(
+                MembershipRequest.user_id == u.id,
+                MembershipRequest.status == UserStatus.PENDING.value
+            )
+        ).scalar_one_or_none()
+        if not has_pending_req:
+            auto_req = MembershipRequest(
+                user_id=u.id,
+                statement="Platformaga ro'yxatdan o'tdi",
+                chosen_directions=["Think & Read", "Think & Analyze"],
+                status=UserStatus.PENDING.value
+            )
+            db.add(auto_req)
+            synced = True
+    if synced:
+        db.commit()
+
+    stmt = select(MembershipRequest).options(joinedload(MembershipRequest.user))
+    if status_filter and status_filter != "all":
         stmt = stmt.where(MembershipRequest.status == status_filter)
     stmt = stmt.order_by(MembershipRequest.created_at.desc())
     result = db.execute(stmt)
@@ -75,24 +102,50 @@ def review_application(
         comment=payload.review_comment
     )
     if not req:
-        raise HTTPException(status_code=404, detail="Ariza topilmadi")
+        raise HTTPException(status_code=404, detail="Ariza topilmadi (Application not found)")
     db.commit()
     db.refresh(req)
     return MembershipRequestResponse.model_validate(req)
 
 @router.get("", response_model=List[UserResponse])
 def list_all_members(
-    status_filter: Optional[str] = None,
+    status_filter: Optional[str] = "approved",
     current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
     db: Session = Depends(get_db)
 ):
     stmt = select(User)
-    if status_filter:
+    if status_filter and status_filter != "all":
         stmt = stmt.where(User.status == status_filter)
     stmt = stmt.order_by(User.created_at.desc())
     result = db.execute(stmt)
     users = result.scalars().all()
     return [UserResponse.model_validate(u) for u in users]
+
+@router.post("/{user_id}/approve", response_model=UserResponse)
+def approve_member_directly_route(
+    user_id: int,
+    current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
+    db: Session = Depends(get_db)
+):
+    user = approve_user_directly(db, user_id, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi (User not found)")
+    db.commit()
+    db.refresh(user)
+    return UserResponse.model_validate(user)
+
+@router.post("/{user_id}/reject", response_model=UserResponse)
+def reject_member_directly_route(
+    user_id: int,
+    current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
+    db: Session = Depends(get_db)
+):
+    user = reject_user_directly(db, user_id, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi (User not found)")
+    db.commit()
+    db.refresh(user)
+    return UserResponse.model_validate(user)
 
 @router.post("/{user_id}/roles", response_model=UserResponse)
 def assign_user_role(
@@ -123,6 +176,17 @@ def assign_user_role(
     # When a role is assigned by Super Admin, automatically approve the user if they were pending
     if user.status == UserStatus.PENDING.value:
         user.status = UserStatus.APPROVED.value
+        stmt = select(MembershipRequest).where(
+            MembershipRequest.user_id == user_id,
+            MembershipRequest.status == UserStatus.PENDING.value
+        )
+        reqs = db.execute(stmt).scalars().all()
+        now = datetime.now(timezone.utc)
+        for r in reqs:
+            r.status = UserStatus.APPROVED.value
+            r.reviewed_by_id = current_user.id
+            r.reviewed_at = now
+            r.review_comment = f"Automatically approved upon granting role: {payload.role_name}"
 
     # Ensure user also has the base member role
     if payload.role_name != RoleEnum.MEMBER.value and not user.has_role(RoleEnum.MEMBER.value):
@@ -134,33 +198,6 @@ def assign_user_role(
         entity_type="user_role",
         entity_id=str(user_id),
         details={"role_name": payload.role_name, "target_user_id": user_id}
-    )
-    db.add(audit)
-
-    db.commit()
-    db.refresh(user)
-    return UserResponse.model_validate(user)
-
-
-@router.post("/{user_id}/approve", response_model=UserResponse)
-def approve_member_directly(
-    user_id: int,
-    current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
-    db: Session = Depends(get_db)
-):
-    user = get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
-
-    user.status = UserStatus.APPROVED.value
-    assign_role_to_user(db, user_id, RoleEnum.MEMBER.value, granted_by_id=current_user.id)
-
-    audit = AuditLog(
-        user_id=current_user.id,
-        action="user_approved_directly",
-        entity_type="user",
-        entity_id=str(user_id),
-        details={"target_user_id": user_id, "approved_by": current_user.display_name}
     )
     db.add(audit)
 

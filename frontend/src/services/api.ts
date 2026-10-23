@@ -132,6 +132,11 @@ export const api = {
       method: 'POST',
     }),
 
+  rejectMember: (userId: number) =>
+    request<User>(`/members/${userId}/reject`, {
+      method: 'POST',
+    }),
+
   // Assignments
   getAssignments: (params?: { direction?: string; status?: string }) => {
     const q = new URLSearchParams();

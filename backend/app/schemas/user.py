@@ -54,7 +54,7 @@ class TelegramAuthRequest(CompatBaseModel):
 class TokenResponse(CompatBaseModel):
     access_token: str
     token_type: str = "bearer"
-    user: UserResponse
+    user: Optional[UserResponse] = None
 
 class RoleAssignRequest(CompatBaseModel):
     role_name: str
@@ -73,7 +73,7 @@ class MembershipRequestReview(CompatBaseModel):
 class MembershipRequestResponse(CompatBaseModel):
     id: int
     user_id: int
-    user: UserResponse
+    user: Optional[UserResponse] = None
     statement: str
     chosen_directions: List[str]
     status: str
