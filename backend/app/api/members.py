@@ -1,5 +1,5 @@
 """
-Member management, application review, and role assignment endpoints.
+Member management, application review, direct communication, and role assignment endpoints.
 """
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,6 +16,7 @@ from app.schemas.user import (
     UserResponse,
     RoleAssignRequest,
     UserUpdate,
+    DirectMessageRequest,
 )
 from app.services.user_service import (
     submit_membership_request,
@@ -26,6 +27,7 @@ from app.services.user_service import (
     revoke_role_from_user,
     get_user_by_id,
 )
+from app.services.notification_service import send_telegram_direct_sync
 
 router = APIRouter(prefix="/members", tags=["Members & Membership"])
 
@@ -54,31 +56,6 @@ def list_membership_requests(
     current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
     db: Session = Depends(get_db)
 ):
-    # Auto-sync any users with pending status who lack a pending membership request record
-    pending_users = db.execute(
-        select(User).where(User.status == UserStatus.PENDING.value)
-    ).scalars().all()
-    
-    synced = False
-    for u in pending_users:
-        has_pending_req = db.execute(
-            select(MembershipRequest).where(
-                MembershipRequest.user_id == u.id,
-                MembershipRequest.status == UserStatus.PENDING.value
-            )
-        ).scalar_one_or_none()
-        if not has_pending_req:
-            auto_req = MembershipRequest(
-                user_id=u.id,
-                statement="Platformaga ro'yxatdan o'tdi",
-                chosen_directions=["Think & Read", "Think & Analyze"],
-                status=UserStatus.PENDING.value
-            )
-            db.add(auto_req)
-            synced = True
-    if synced:
-        db.commit()
-
     stmt = select(MembershipRequest).options(joinedload(MembershipRequest.user))
     if status_filter and status_filter != "all":
         stmt = stmt.where(MembershipRequest.status == status_filter)
@@ -146,6 +123,39 @@ def reject_member_directly_route(
     db.commit()
     db.refresh(user)
     return UserResponse.model_validate(user)
+
+@router.post("/{user_id}/message")
+def send_message_to_user_route(
+    user_id: int,
+    payload: DirectMessageRequest,
+    current_user: User = Depends(require_roles([RoleEnum.MODERATOR.value, RoleEnum.SUPER_ADMIN.value])),
+    db: Session = Depends(get_db)
+):
+    target = get_user_by_id(db, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    if not target.telegram_id:
+        raise HTTPException(status_code=400, detail="Foydalanuvchining Telegram ID si mavjud emas")
+
+    admin_title = f"📩 {current_user.display_name} (Ma'muriyat)"
+    ok, err = send_telegram_direct_sync(
+        target.telegram_id,
+        admin_title,
+        payload.message
+    )
+    if not ok:
+        raise HTTPException(status_code=502, detail=f"Telegram xabari yuborilmadi: {err}")
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="direct_message_sent",
+        entity_type="user",
+        entity_id=str(user_id),
+        details={"target_user_id": user_id, "message_preview": payload.message[:150]}
+    )
+    db.add(audit)
+    db.commit()
+    return {"success": True, "detail": "Xabar muvaffaqiyatli yetkazildi"}
 
 @router.post("/{user_id}/roles", response_model=UserResponse)
 def assign_user_role(

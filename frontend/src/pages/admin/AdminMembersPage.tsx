@@ -18,7 +18,9 @@ import {
   Clock,
   Send,
   Calendar,
-  BookOpen
+  BookOpen,
+  Mail,
+  X
 } from 'lucide-react';
 
 export const AdminMembersPage: React.FC = () => {
@@ -31,6 +33,11 @@ export const AdminMembersPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'requests' | 'members'>('requests');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Messaging Modal State
+  const [messagingUser, setMessagingUser] = useState<{ id: number; name: string; username?: string } | null>(null);
+  const [messageBody, setMessageBody] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const isSuperAdmin = currentUser?.roles.some(r => r.role_name === 'super_admin');
   const canReview = currentUser?.roles.some(r => r.role_name === 'super_admin' || r.role_name === 'moderator');
@@ -63,10 +70,9 @@ export const AdminMembersPage: React.FC = () => {
       setMessage({
         type: 'success',
         text: action === 'approve'
-          ? "A'zolik arizasi muvaffaqiyatli tasdiqlandi (Application approved)."
-          : "A'zolik arizasi rad etildi (Application rejected)."
+          ? "A'zolik arizasi muvaffaqiyatli tasdiqlandi (Talabaga Telegram orqali xabar yuborildi)."
+          : "A'zolik arizasi rad etildi (Talabaga xabar berildi)."
       });
-      // Refresh both tabs immediately
       await fetchData();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Harakatni bajarishda xatolik yuz berdi.' });
@@ -108,12 +114,30 @@ export const AdminMembersPage: React.FC = () => {
     setMessage(null);
     try {
       await api.approveMember(userId);
-      setMessage({ type: 'success', text: "Foydalanuvchi muvaffaqiyatli tasdiqlandi (Member approved)." });
+      setMessage({ type: 'success', text: "Foydalanuvchi muvaffaqiyatli tasdiqlandi va unga Telegram xabari yetkazildi." });
       await fetchData();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Tasdiqlashda xatolik yuz berdi.' });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messagingUser || !messageBody.trim()) return;
+    setIsSendingMessage(true);
+    try {
+      await api.sendMessageToMember(messagingUser.id, messageBody.trim());
+      setMessage({
+        type: 'success',
+        text: `Xabar ${messagingUser.name} (${messagingUser.username ? '@' + messagingUser.username : 'ID: ' + messagingUser.id}) ning Telegramiga yetkazildi!`
+      });
+      setMessagingUser(null);
+      setMessageBody('');
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Xabar yuborishda xatolik yuz berdi.' });
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -263,22 +287,33 @@ export const AdminMembersPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                       <button
-                        onClick={() => handleReviewRequest(req.id, 'reject')}
-                        disabled={actionLoading || !canReview}
-                        className="px-3.5 py-1.5 border border-red-200 text-red-700 hover:bg-red-50 font-medium rounded-lg transition disabled:opacity-50"
+                        onClick={() => setMessagingUser({ id: req.user_id, name: applicantName, username: req.user?.username })}
+                        className="px-3 py-1.5 border border-blue-200 text-blue-700 hover:bg-blue-50 font-medium rounded-lg transition flex items-center space-x-1"
+                        title="Talabaga to'g'ridan-to'g'ri Telegram xabari yozish"
                       >
-                        Rad etish (Reject)
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Xabar yozish</span>
                       </button>
-                      <button
-                        onClick={() => handleReviewRequest(req.id, 'approve')}
-                        disabled={actionLoading || !canReview}
-                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition disabled:opacity-50 flex items-center space-x-1.5"
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        <span>A'zolikni tasdiqlash (Approve)</span>
-                      </button>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleReviewRequest(req.id, 'reject')}
+                          disabled={actionLoading || !canReview}
+                          className="px-3 py-1.5 border border-red-200 text-red-700 hover:bg-red-50 font-medium rounded-lg transition disabled:opacity-50"
+                        >
+                          Rad etish
+                        </button>
+                        <button
+                          onClick={() => handleReviewRequest(req.id, 'approve')}
+                          disabled={actionLoading || !canReview}
+                          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition disabled:opacity-50 flex items-center space-x-1.5"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>Tasdiqlash (Approve)</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -311,13 +346,13 @@ export const AdminMembersPage: React.FC = () => {
                   <th className="py-3.5 px-4">Fakultet & Student ID</th>
                   <th className="py-3.5 px-4">Biriktirilgan Rollar</th>
                   <th className="py-3.5 px-4">Holati</th>
-                  {isSuperAdmin && <th className="py-3.5 px-4 text-right">Rol Boshqaruvi</th>}
+                  <th className="py-3.5 px-4 text-right">Amallar & Rol</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-navy-900">
                 {filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperAdmin ? 5 : 4} className="py-12 text-center text-gray-400">
+                    <td colSpan={5} className="py-12 text-center text-gray-400">
                       Hech qanday a'zo topilmadi (No approved members found).
                     </td>
                   </tr>
@@ -325,9 +360,20 @@ export const AdminMembersPage: React.FC = () => {
                   filteredMembers.map((m) => (
                     <tr key={m.id} className="hover:bg-gray-50/70 transition">
                       <td className="py-4 px-5">
-                        <div className="font-semibold text-sm text-navy-950">{m.display_name}</div>
-                        <div className="text-[11px] text-gray-400">
-                          {m.username ? `@${m.username}` : `Telegram ID: ${m.telegram_id}`}
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <div className="font-semibold text-sm text-navy-950">{m.display_name}</div>
+                            <div className="text-[11px] text-gray-400">
+                              {m.username ? `@${m.username}` : `Telegram ID: ${m.telegram_id}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setMessagingUser({ id: m.id, name: m.display_name, username: m.username })}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Telegram orqali xabar yuborish"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                       <td className="py-4 px-4 text-gray-600">
@@ -382,8 +428,8 @@ export const AdminMembersPage: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      {isSuperAdmin && (
-                        <td className="py-4 px-4 text-right">
+                      <td className="py-4 px-4 text-right">
+                        {isSuperAdmin && (
                           <select
                             onChange={(e) => {
                               if (e.target.value) {
@@ -403,13 +449,73 @@ export const AdminMembersPage: React.FC = () => {
                                 </option>
                               ))}
                           </select>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Telegram Message Modal */}
+      {messagingUser && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2.5 bg-blue-100 text-blue-700 rounded-xl">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-navy-950 text-sm">Shaxsiy Telegram xabari</h3>
+                  <p className="text-xs text-gray-500">
+                    Qabul qiluvchi: <b className="text-navy-900">{messagingUser.name}</b> {messagingUser.username ? `(@${messagingUser.username})` : ''}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setMessagingUser(null)} 
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Xabar matni:
+              </label>
+              <textarea
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                rows={5}
+                placeholder="Talabaga yuboriladigan ko'rsatma, eslatma yoki shaxsiy xabarni kiriting..."
+                className="w-full p-3.5 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed text-navy-900"
+              />
+              <p className="text-[11px] text-gray-400">
+                Ushbu xabar to'g'ridan-to'g'ri talabaning Telegram botiga ThinkSpace ma'muriyati nomidan yetkaziladi.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-3 border-t">
+              <button
+                onClick={() => setMessagingUser(null)}
+                className="px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-medium rounded-lg transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleSendMessage}
+                disabled={isSendingMessage || !messageBody.trim()}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg flex items-center space-x-1.5 transition disabled:opacity-50 shadow-sm"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSendingMessage ? "Yuborilmoqda..." : "Telegramga yuborish"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

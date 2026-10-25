@@ -137,6 +137,12 @@ export const api = {
       method: 'POST',
     }),
 
+  sendMessageToMember: (userId: number, message: string) =>
+    request<{ success: boolean; detail: string }>(`/members/${userId}/message`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
   // Assignments
   getAssignments: (params?: { direction?: string; status?: string }) => {
     const q = new URLSearchParams();

@@ -51,16 +51,6 @@ def get_or_create_user_from_telegram(
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.EVALUATOR.value))
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.MEMBER.value))
             session.flush()
-        else:
-            # Auto-create pending membership application for new non-admin user
-            req = MembershipRequest(
-                user_id=user.id,
-                statement="Platformaga a'zo bo'lish arizasi (Telegram)",
-                chosen_directions=["Think & Read", "Think & Analyze"],
-                status=UserStatus.PENDING.value
-            )
-            session.add(req)
-            session.flush()
     else:
         user.first_name = first_name
         user.last_name = last_name
@@ -73,23 +63,6 @@ def get_or_create_user_from_telegram(
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.EVALUATOR.value))
             session.add(UserRole(user_id=user.id, role_name=RoleEnum.MEMBER.value))
             session.flush()
-        elif not is_super_admin and user.status == UserStatus.PENDING.value:
-            # Verify existing pending user has a pending membership request
-            has_pending = session.execute(
-                select(MembershipRequest).where(
-                    MembershipRequest.user_id == user.id,
-                    MembershipRequest.status == UserStatus.PENDING.value
-                )
-            ).scalar_one_or_none()
-            if not has_pending:
-                req = MembershipRequest(
-                    user_id=user.id,
-                    statement="Platformaga a'zo bo'lish arizasi (Telegram)",
-                    chosen_directions=["Think & Read", "Think & Analyze"],
-                    status=UserStatus.PENDING.value
-                )
-                session.add(req)
-                session.flush()
 
     return user
 
@@ -176,9 +149,35 @@ def review_membership_request(
         req.status = UserStatus.APPROVED.value
         user.status = UserStatus.APPROVED.value
         assign_role_to_user(session, user.id, RoleEnum.MEMBER.value, granted_by_id=reviewer_id)
+        if user.telegram_id:
+            try:
+                from app.services.notification_service import send_telegram_direct_sync
+                send_telegram_direct_sync(
+                    user.telegram_id,
+                    "🎉 A'zolik arizangiz tasdiqlandi!",
+                    f"Assalomu alaykum, <b>{user.display_name}</b>!\n\n"
+                    "Sizning <b>ThinkSpace | UWED</b> intellektual klubiga a'zolik arizangiz ma'muriyat tomonidan <b>tasdiqlandi!</b> ✅\n\n"
+                    "Endi siz klubning to'laqonli a'zosisiz va barcha yo'nalishlardagi topshiriqlarni bajarishingiz mumkin.\n\n"
+                    "Topshiriqlarni ko'rish va topshirish uchun <b>/tasks</b> buyrug'ini bosing yoki Mini App'ni oching."
+                )
+            except Exception as e:
+                print(f"[notification] Failed to send approve telegram message: {e}")
     else:
         req.status = UserStatus.REJECTED.value
         user.status = UserStatus.REJECTED.value
+        if user.telegram_id:
+            try:
+                from app.services.notification_service import send_telegram_direct_sync
+                comment_text = f"\n\nIzoh: <i>{comment}</i>" if comment else ""
+                send_telegram_direct_sync(
+                    user.telegram_id,
+                    "A'zolik arizangiz bo'yicha ma'lumot",
+                    f"Assalomu alaykum, <b>{user.display_name}</b>.\n\n"
+                    f"Sizning ThinkSpace | UWED klubiga a'zolik arizangiz ma'muriyat tomonidan ko'rib chiqildi va bu safar qabul qilinmadi.{comment_text}\n\n"
+                    "Kelgusi qabullarda yana topshirishingiz mumkin."
+                )
+            except Exception as e:
+                print(f"[notification] Failed to send reject telegram message: {e}")
 
     audit = AuditLog(
         user_id=reviewer_id,
@@ -217,6 +216,20 @@ def approve_user_directly(
         r.reviewed_at = now
         r.review_comment = comment or "Directly approved by admin"
 
+    if user.telegram_id:
+        try:
+            from app.services.notification_service import send_telegram_direct_sync
+            send_telegram_direct_sync(
+                user.telegram_id,
+                "🎉 A'zolik arizangiz tasdiqlandi!",
+                f"Assalomu alaykum, <b>{user.display_name}</b>!\n\n"
+                "Sizning <b>ThinkSpace | UWED</b> intellektual klubiga a'zolik arizangiz ma'muriyat tomonidan <b>tasdiqlandi!</b> ✅\n\n"
+                "Endi siz klubning to'laqonli a'zosisiz va barcha yo'nalishlardagi topshiriqlarni bajarishingiz mumkin.\n\n"
+                "Topshiriqlarni ko'rish va topshirish uchun <b>/tasks</b> buyrug'ini bosing yoki Mini App'ni oching."
+            )
+        except Exception as e:
+            print(f"[notification] Failed to send approve telegram message: {e}")
+
     audit = AuditLog(
         user_id=reviewer_id,
         action="user_approved_directly",
@@ -252,6 +265,20 @@ def reject_user_directly(
         r.reviewed_by_id = reviewer_id
         r.reviewed_at = now
         r.review_comment = comment or "Directly rejected by admin"
+
+    if user.telegram_id:
+        try:
+            from app.services.notification_service import send_telegram_direct_sync
+            comment_text = f"\n\nIzoh: <i>{comment}</i>" if comment else ""
+            send_telegram_direct_sync(
+                user.telegram_id,
+                "A'zolik arizangiz bo'yicha ma'lumot",
+                f"Assalomu alaykum, <b>{user.display_name}</b>.\n\n"
+                f"Sizning ThinkSpace | UWED klubiga a'zolik arizangiz ma'muriyat tomonidan ko'rib chiqildi va bu safar qabul qilinmadi.{comment_text}\n\n"
+                "Kelgusi qabullarda yana topshirishingiz mumkin."
+            )
+        except Exception as e:
+            print(f"[notification] Failed to send reject telegram message: {e}")
 
     audit = AuditLog(
         user_id=reviewer_id,

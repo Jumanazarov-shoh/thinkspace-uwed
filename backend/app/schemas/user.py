@@ -80,3 +80,7 @@ class MembershipRequestResponse(CompatBaseModel):
     reviewed_at: Optional[datetime] = None
     review_comment: Optional[str] = None
     created_at: datetime
+
+
+class DirectMessageRequest(CompatBaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
