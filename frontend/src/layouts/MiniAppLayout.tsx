@@ -30,7 +30,7 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
   children
 }) => {
   const { t, language, setLanguage } = useTranslation();
-  const { user, isStaff, loginAs } = useAuth();
+  const { user, isStaff } = useAuth();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -58,33 +58,34 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#0B192C] flex flex-col justify-between max-w-md mx-auto shadow-2xl relative border-x border-gray-200">
-      {/* Top Academic Header */}
-      <header className="sticky top-0 z-30 bg-[#0B192C] text-white px-4 py-3 shadow-md flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8F9FA] text-[#0F172A] flex flex-col justify-between max-w-md mx-auto shadow-[0_4px_24px_rgba(15,23,42,0.06)] relative border-x border-slate-200/80">
+      {/* Top Academic Header - Quiet Chrome */}
+      <header className="sticky top-0 z-30 bg-[#0B192C] text-white px-4 py-3 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center font-serif font-bold text-lg text-white border border-blue-400/30">
-            T
+          <div className="w-8 h-8 rounded-md bg-navy-800 border border-white/15 flex items-center justify-center font-serif font-semibold text-base text-white shadow-xs relative">
+            <span>T</span>
+            <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
           </div>
           <div>
-            <h1 className="font-serif font-semibold text-sm tracking-wide leading-tight">
-              ThinkSpace | UWED
+            <h1 className="font-serif font-semibold text-sm tracking-tight leading-tight text-slate-100">
+              ThinkSpace
             </h1>
-            <p className="text-[10px] text-gray-300 font-sans tracking-tight">
-              SIEM • JIDU Intellektual Klubi
+            <p className="text-[11px] text-slate-400 font-sans tracking-tight">
+              SIEM • UWED Intellectual Club
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
           {/* Notification Bell */}
           <button
             onClick={() => setIsNotificationOpen(true)}
             title="Xabarnomalar"
-            className="relative p-1.5 rounded-lg bg-navy-800/80 hover:bg-navy-700 text-gray-200 hover:text-white border border-gray-600/50 transition"
+            className="relative p-2 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-colors"
           >
-            <Bell className="w-4 h-4 text-gray-200" />
+            <Bell className="w-4 h-4 stroke-[1.75]" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse border border-navy-950">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-blue-600 text-white text-[9px] font-semibold flex items-center justify-center tabular-nums border border-[#0B192C]">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -93,10 +94,10 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
           {/* Language Switcher */}
           <button
             onClick={() => setLanguage(language === 'uz' ? 'en' : 'uz')}
-            className="flex items-center space-x-1 text-xs bg-navy-800/80 hover:bg-navy-700 px-2 py-1 rounded border border-gray-600/50 transition-colors"
+            className="flex items-center space-x-1 text-xs bg-white/5 hover:bg-white/10 text-slate-300 px-2 py-1.5 rounded-md border border-white/10 font-mono transition-colors"
           >
-            <Globe className="w-3.5 h-3.5 text-blue-400" />
-            <span className="font-semibold uppercase">{language}</span>
+            <Globe className="w-3.5 h-3.5 text-slate-400 stroke-[1.75]" />
+            <span className="font-medium uppercase">{language}</span>
           </button>
 
           {/* Switch to Admin if Staff */}
@@ -104,9 +105,9 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
             <button
               onClick={onOpenAdmin}
               title="Admin Panel"
-              className="flex items-center space-x-1 text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium px-2 py-1 rounded shadow-sm transition-all"
+              className="flex items-center space-x-1 text-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-medium px-2.5 py-1.5 rounded-md border border-amber-500/30 transition-colors"
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <ShieldCheck className="w-3.5 h-3.5 stroke-[1.75]" />
               <span>Admin</span>
             </button>
           )}
@@ -114,12 +115,12 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-20 px-3.5 pt-3">
+      <main className="flex-1 overflow-y-auto pb-20 px-4 pt-4">
         {children}
       </main>
 
-      {/* Bottom Mobile Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-gray-200 py-1.5 px-3 z-40 flex justify-around items-center shadow-lg">
+      {/* Bottom Navigation - Quiet, Craft-Oriented */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-3 z-40 flex justify-around items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -127,19 +128,21 @@ export const MiniAppLayout: React.FC<MiniAppLayoutProps> = ({
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-all ${
+              className={`flex flex-col items-center py-1 px-3 rounded-md transition-colors ${
                 isActive
-                  ? 'text-navy-900 font-semibold scale-105'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-navy-950 font-medium'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <div className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700 stroke-[2.4]' : 'stroke-[1.8]'}`} />
+              <div className="relative flex items-center justify-center">
+                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700 stroke-[2]' : 'text-slate-400 stroke-[1.75]'}`} />
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-700" />
+                  <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-blue-700" />
                 )}
               </div>
-              <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>
+              <span className={`text-[11px] mt-1 tracking-tight ${isActive ? 'text-navy-950 font-semibold' : 'text-slate-500'}`}>
+                {item.label}
+              </span>
             </button>
           );
         })}

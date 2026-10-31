@@ -12,15 +12,11 @@ import {
   Clock, 
   CheckCircle2, 
   AlertCircle,
-  ExternalLink,
   Plus,
   RefreshCw,
   Bell,
   Send,
-  Sparkles,
-  Check,
   X,
-  Radio,
   SendHorizontal
 } from 'lucide-react';
 
@@ -114,37 +110,37 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
   const awaitingModerationCount = submissions.filter(s => s.status === 'evaluated').length;
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Top Banner / Welcome */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Top Banner / Welcome - Quiet Craft */}
+      <div className="bg-white rounded-lg p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs uppercase tracking-wider font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded">
+            <span className="text-[11px] font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
               UWED SIEM Operations
             </span>
-            <span className="text-xs text-gray-400">• Academic Year 2026</span>
+            <span className="text-xs text-slate-400 font-sans">• 2026 Academic Year</span>
           </div>
-          <h1 className="text-2xl font-serif font-bold text-navy-950 mt-1">
+          <h1 className="text-xl md:text-2xl font-serif font-semibold text-slate-900 mt-1.5 tracking-tight">
             ThinkSpace Evaluation Hub
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Welcome, {user?.display_name || 'Staff Member'}. Manage academic submissions, rubric evaluations, and grade moderation.
+          <p className="text-xs md:text-sm text-slate-500 mt-0.5 font-sans leading-relaxed">
+            Welcome, {user?.display_name || 'Staff'}. Manage academic submissions, rubric evaluations, and grade moderation.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 shrink-0">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={fetchData}
             title="Refresh Data"
-            className="p-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+            className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 stroke-[1.75] ${loading ? 'animate-spin text-blue-700' : ''}`} />
           </button>
           <button
             onClick={() => onNavigateTab('assignments')}
-            className="flex items-center space-x-2 bg-navy-900 hover:bg-navy-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-sm transition"
+            className="flex items-center space-x-1.5 bg-navy-900 hover:bg-navy-800 text-white text-xs font-medium px-3.5 py-2 rounded-md shadow-xs transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 stroke-[1.75]" />
             <span>{t.admin.createAssignment}</span>
           </button>
         </div>
@@ -152,171 +148,171 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
 
       {/* Action Success Alert */}
       {actionSuccessMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center justify-between shadow-sm animate-fade-in">
-          <div className="flex items-center space-x-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span className="text-sm font-medium">{actionSuccessMsg}</span>
+        <div className="bg-emerald-50/80 border border-emerald-200 text-emerald-900 rounded-lg p-3.5 flex items-center justify-between shadow-xs">
+          <div className="flex items-center space-x-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 stroke-[1.75]" />
+            <span className="text-xs font-medium">{actionSuccessMsg}</span>
           </div>
           <button
             onClick={() => setActionSuccessMsg(null)}
-            className="text-emerald-500 hover:text-emerald-700 p-1"
+            className="text-emerald-600 hover:text-emerald-800 p-1"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[1.75]" />
           </button>
         </div>
       )}
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* KPI Cards Grid - Tabular Figures, Muted Accents */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Approved Members */}
         <div 
           onClick={() => onNavigateTab('members')}
-          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-400 hover:shadow-md transition cursor-pointer"
+          className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-xs hover:border-slate-400/80 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-tight">
               {t.admin.totalMembers}
             </span>
-            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700">
-              <Users className="w-5 h-5" />
+            <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700">
+              <Users className="w-4 h-4 stroke-[1.75]" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-serif font-bold text-navy-950">{members.length}</span>
+            <span className="text-2xl font-serif font-semibold text-slate-900 tabular-nums">{members.length}</span>
             {pendingRequestsCount > 0 && (
-              <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-mono font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
                 +{pendingRequestsCount} pending
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-1">Verified SIEM students & members</p>
+          <p className="text-[11px] text-slate-400 mt-1 font-sans">Verified SIEM students & members</p>
         </div>
 
         {/* Open Assignments */}
         <div 
           onClick={() => onNavigateTab('assignments')}
-          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-400 hover:shadow-md transition cursor-pointer"
+          className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-xs hover:border-slate-400/80 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-tight">
               {t.admin.openAssignments}
             </span>
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
-              <Layers className="w-5 h-5" />
+            <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700">
+              <Layers className="w-4 h-4 stroke-[1.75]" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-serif font-bold text-navy-950">{openAssignmentsCount}</span>
-            <span className="text-xs text-gray-400">of {assignments.length} total</span>
+            <span className="text-2xl font-serif font-semibold text-slate-900 tabular-nums">{openAssignmentsCount}</span>
+            <span className="text-xs text-slate-400 font-sans tabular-nums">of {assignments.length} total</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Active tasks accepting submissions</p>
+          <p className="text-[11px] text-slate-400 mt-1 font-sans">Active tasks accepting work</p>
         </div>
 
-        {/* Pending Evaluations */}
+        {/* Pending Reviews */}
         <div 
           onClick={() => onNavigateTab('workspace')}
-          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-400 hover:shadow-md transition cursor-pointer"
+          className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-xs hover:border-slate-400/80 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-tight">
               {t.admin.pendingReviews}
             </span>
-            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700">
-              <FileCheck2 className="w-5 h-5" />
+            <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700">
+              <FileCheck2 className="w-4 h-4 stroke-[1.75]" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-serif font-bold text-navy-950">{pendingReviewsCount}</span>
-            <span className="text-xs text-amber-600 font-medium">Needs evaluation</span>
+            <span className="text-2xl font-serif font-semibold text-slate-900 tabular-nums">{pendingReviewsCount}</span>
+            <span className="text-xs text-amber-700 font-medium font-sans">Needs review</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Submissions waiting for rubric scoring</p>
+          <p className="text-[11px] text-slate-400 mt-1 font-sans">Submissions awaiting rubric evaluation</p>
         </div>
 
         {/* Awaiting Moderation */}
         <div 
           onClick={() => onNavigateTab('moderation')}
-          className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:border-blue-400 hover:shadow-md transition cursor-pointer"
+          className="bg-white rounded-lg p-4 border border-slate-200/90 shadow-xs hover:border-slate-400/80 transition-colors cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-tight">
               {t.admin.awaitingModeration}
             </span>
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-700">
-              <SlidersHorizontal className="w-5 h-5" />
+            <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700">
+              <SlidersHorizontal className="w-4 h-4 stroke-[1.75]" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-serif font-bold text-navy-950">{awaitingModerationCount}</span>
-            <span className="text-xs text-indigo-600 font-medium">Ready to publish</span>
+            <span className="text-2xl font-serif font-semibold text-slate-900 tabular-nums">{awaitingModerationCount}</span>
+            <span className="text-xs text-blue-700 font-medium font-sans">Ready to publish</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">Evaluated works awaiting final sign-off</p>
+          <p className="text-[11px] text-slate-400 mt-1 font-sans">Evaluated works awaiting final sign-off</p>
         </div>
       </div>
 
       {/* Main Split: Submissions Queue & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Submissions Queue */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="lg:col-span-2 bg-white rounded-lg border border-slate-200/90 shadow-xs p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h2 className="text-base font-serif font-bold text-navy-950">Recent Submission Queue</h2>
-              <p className="text-xs text-gray-400">Incoming academic submissions across all 6 directions</p>
+              <h2 className="text-sm md:text-base font-serif font-semibold text-slate-900">Recent Submission Queue</h2>
+              <p className="text-xs text-slate-400 font-sans">Incoming academic works across all 6 directions</p>
             </div>
             <button
               onClick={() => onNavigateTab('workspace')}
-              className="text-xs font-medium text-blue-700 hover:text-blue-800 flex items-center space-x-1"
+              className="text-xs font-medium text-blue-700 hover:text-blue-900 flex items-center space-x-1 transition-colors"
             >
               <span>Open Workspace</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 stroke-[1.75]" />
             </button>
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-gray-400 text-sm">Loading queue...</div>
+            <div className="py-12 text-center text-slate-400 text-xs font-sans">Loading queue...</div>
           ) : submissions.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 text-sm">
+            <div className="py-12 text-center text-slate-400 text-xs font-sans">
               No submissions found yet. Once members submit work via Mini App, they will appear here.
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-slate-100">
               {submissions.slice(0, 7).map((sub) => {
                 const ass = assignments.find(a => a.id === sub.assignment_id);
                 return (
-                  <div key={sub.id} className="py-3.5 flex items-center justify-between hover:bg-gray-50/80 px-2 rounded-lg transition">
-                    <div className="space-y-1 min-w-0 pr-4">
+                  <div key={sub.id} className="py-3 flex items-center justify-between hover:bg-slate-50/70 px-2 rounded-md transition-colors">
+                    <div className="space-y-0.5 min-w-0 pr-4">
                       <div className="flex items-center space-x-2">
-                        <span className="font-medium text-sm text-navy-900 truncate">
+                        <span className="font-medium text-xs text-slate-900 truncate">
                           {sub.user?.display_name || `Member #${sub.user_id}`}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-[11px] text-slate-400 font-mono">
                           {sub.user?.student_id && `(${sub.user.student_id})`}
                         </span>
-                        <span className="text-[11px] font-mono text-gray-400">v{sub.version_number}</span>
+                        <span className="text-[10px] font-mono text-slate-400">v{sub.version_number}</span>
                       </div>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-slate-500 truncate font-sans">
                         {ass?.title || `Assignment #${sub.assignment_id}`}
                       </p>
-                      <div className="flex items-center space-x-2 text-[11px] text-gray-400">
-                        <Clock className="w-3 h-3" />
-                        <span>{sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'Recent'}</span>
+                      <div className="flex items-center space-x-2 text-[10px] text-slate-400 font-sans">
+                        <Clock className="w-3 h-3 stroke-[1.75]" />
+                        <span className="tabular-nums">{sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'Recent'}</span>
                         <span>•</span>
                         <span>{sub.submission_type}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3 shrink-0">
-                      <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
-                        sub.status === 'published' ? 'bg-emerald-100 text-emerald-800' :
-                        sub.status === 'evaluated' ? 'bg-indigo-100 text-indigo-800' :
-                        sub.status === 'revision_requested' ? 'bg-amber-100 text-amber-800' :
-                        'bg-blue-100 text-blue-800'
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-medium ${
+                        sub.status === 'published' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                        sub.status === 'evaluated' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                        sub.status === 'revision_requested' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                        'bg-slate-100 text-slate-700 border-slate-200'
                       }`}>
                         {sub.status.replace('_', ' ')}
                       </span>
 
                       <button
                         onClick={() => onNavigateTab('workspace', sub.id)}
-                        className="text-xs bg-navy-50 hover:bg-navy-100 text-navy-900 font-medium px-3 py-1.5 rounded border border-navy-200 transition"
+                        className="text-xs bg-white hover:bg-slate-100 text-slate-700 font-medium px-2.5 py-1 rounded border border-slate-200 transition-colors"
                       >
                         Evaluate
                       </button>
@@ -328,124 +324,124 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
           )}
         </div>
 
-        {/* Right Col: Direction Distribution & Academic Rules */}
-        <div className="space-y-6">
-          {/* Quick Guidance Box */}
-          <div className="bg-gradient-to-br from-[#0B192C] to-[#1E3E62] text-white rounded-xl p-5 shadow-sm space-y-3">
-            <h3 className="font-serif font-bold text-base text-blue-200">
+        {/* Right Col: Academic Protocol & Management */}
+        <div className="space-y-4">
+          {/* Quick Guidance Box - Quiet Academic Slate */}
+          <div className="bg-[#0B192C] text-white rounded-lg p-4 border border-white/10 shadow-xs space-y-2.5">
+            <h3 className="font-serif font-semibold text-sm text-slate-200">
               UWED Multi-Admin Protocol
             </h3>
-            <p className="text-xs text-gray-300 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">
               Assignments use rubric-based scoring. If score discrepancy between evaluators exceeds 15%, senior review or moderator intervention is automatically required before publishing grades.
             </p>
-            <div className="pt-2 border-t border-navy-700/60 text-xs text-blue-300 flex items-center justify-between font-mono">
+            <div className="pt-2 border-t border-white/10 text-xs text-slate-400 flex items-center justify-between font-mono">
               <span>Discrepancy Threshold:</span>
-              <span className="font-bold text-white bg-blue-900/60 px-2 py-0.5 rounded">15%</span>
+              <span className="font-medium text-white bg-white/10 px-2 py-0.5 rounded border border-white/10">15%</span>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-3">
-            <h3 className="font-serif font-bold text-sm text-navy-900">
+          <div className="bg-white rounded-lg border border-slate-200/90 shadow-xs p-4 space-y-2.5">
+            <h3 className="font-serif font-semibold text-xs uppercase tracking-wide text-slate-500">
               Administrative Workflows
             </h3>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-xs font-sans">
               <button
                 onClick={() => onNavigateTab('assignments')}
-                className="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-900 transition flex items-center justify-between"
+                className="w-full text-left px-3 py-2 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-between"
               >
                 <span>Draft New Rubric</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 stroke-[1.75]" />
               </button>
               <button
                 onClick={() => onNavigateTab('moderation')}
-                className="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-900 transition flex items-center justify-between"
+                className="w-full text-left px-3 py-2 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-between"
               >
                 <span>Publish Pending Grades</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 stroke-[1.75]" />
               </button>
               <button
                 onClick={() => onNavigateTab('members')}
-                className="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-900 transition flex items-center justify-between"
+                className="w-full text-left px-3 py-2 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-between"
               >
                 <span>Review Membership Requests</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 stroke-[1.75]" />
               </button>
               <button
                 onClick={() => onNavigateTab('analytics')}
-                className="w-full text-left px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-900 transition flex items-center justify-between"
+                className="w-full text-left px-3 py-2 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors flex items-center justify-between"
               >
                 <span>Export Progress & Metrics</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 stroke-[1.75]" />
               </button>
             </div>
           </div>
 
           {/* Notification & Reminder Operations */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+          <div className="bg-white rounded-lg border border-slate-200/90 shadow-xs p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700">
-                  <Bell className="w-4 h-4" />
+                <div className="w-7 h-7 rounded bg-slate-100 flex items-center justify-center text-slate-700">
+                  <Bell className="w-3.5 h-3.5 stroke-[1.75]" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-sm text-navy-900">
+                  <h3 className="font-serif font-semibold text-xs text-slate-900">
                     Notifications & Reminders
                   </h3>
-                  <p className="text-[11px] text-gray-400">Telegram & In-App dispatch status</p>
+                  <p className="text-[10px] text-slate-400 font-sans">Telegram & In-App dispatch</p>
                 </div>
               </div>
-              <span className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 font-medium px-2 py-0.5 rounded border border-emerald-200 flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                 <span>Active</span>
               </span>
             </div>
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Jami Bildirishnoma</span>
-                <span className="text-base font-bold text-navy-950 font-serif">
+              <div className="bg-slate-50 p-2 rounded-md border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase font-medium">Jami</span>
+                <span className="text-sm font-semibold text-slate-900 font-serif tabular-nums">
                   {notifStatus?.total_notifications ?? 0}
                 </span>
               </div>
-              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Telegram Yetkazilgan</span>
-                <span className="text-base font-bold text-emerald-600 font-serif">
+              <div className="bg-slate-50 p-2 rounded-md border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase font-medium">Telegram</span>
+                <span className="text-sm font-semibold text-emerald-700 font-serif tabular-nums">
                   {notifStatus?.telegram_sent_count ?? 0}
                 </span>
               </div>
-              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">O'qilmagan (In-App)</span>
-                <span className="text-base font-bold text-amber-600 font-serif">
+              <div className="bg-slate-50 p-2 rounded-md border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase font-medium">O'qilmagan</span>
+                <span className="text-sm font-semibold text-amber-700 font-serif tabular-nums">
                   {notifStatus?.unread_notifications ?? 0}
                 </span>
               </div>
-              <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Yetkazilmadi / O'chirilgan</span>
-                <span className="text-base font-bold text-gray-700 font-serif">
+              <div className="bg-slate-50 p-2 rounded-md border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase font-medium">Yetkazilmadi</span>
+                <span className="text-sm font-semibold text-slate-700 font-serif tabular-nums">
                   {(notifStatus?.telegram_failed_count ?? 0) + (notifStatus?.telegram_disabled_count ?? 0)}
                 </span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 space-y-2 border-t border-gray-100">
+            <div className="pt-2 space-y-1.5 border-t border-slate-100">
               <button
                 onClick={handleProcessReminders}
                 disabled={processingReminders}
-                className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg text-xs font-semibold transition border border-blue-200 disabled:opacity-50"
+                className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-md text-xs font-medium transition-colors border border-slate-200 disabled:opacity-50"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${processingReminders ? 'animate-spin' : ''}`} />
-                <span>{processingReminders ? 'Eslatmalar tekshirilmoqda...' : 'Eslatmalarni tekshirish (24h/3h)'}</span>
+                <RefreshCw className={`w-3 h-3 stroke-[1.75] ${processingReminders ? 'animate-spin' : ''}`} />
+                <span>{processingReminders ? 'Tekshirilmoqda...' : 'Eslatmalarni tekshirish (24h/3h)'}</span>
               </button>
 
               {isSuperAdmin && (
                 <button
                   onClick={() => setShowAnnouncementModal(true)}
-                  className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                  className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-navy-900 hover:bg-navy-800 text-white rounded-md text-xs font-medium transition-colors shadow-xs"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-3 h-3 stroke-[1.75]" />
                   <span>Rasmiy e'lon yuborish</span>
                 </button>
               )}
@@ -456,31 +452,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
 
       {/* Super Admin Broadcast Modal */}
       {showAnnouncementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-navy-100 flex items-center justify-center text-navy-900">
-                  <SendHorizontal className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center text-slate-800">
+                  <SendHorizontal className="w-4 h-4 stroke-[1.75]" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-navy-950 text-base">
+                  <h3 className="font-serif font-semibold text-slate-900 text-sm">
                     Barcha a'zolarga rasmiy e'lon
                   </h3>
-                  <p className="text-xs text-gray-400">Telegram va In-App tizimi orqali tarqatiladi</p>
+                  <p className="text-xs text-slate-400">Telegram va Mini App bildirishnomalari orqali yetkaziladi</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowAnnouncementModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSendAnnouncement} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium text-slate-700 uppercase tracking-wide mb-1">
                   E'lon sarlavhasi
                 </label>
                 <input
@@ -489,43 +485,43 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
                   placeholder="Masalan: Muhim seminar yoki muddat o'zgarishi"
                   value={announcementTitle}
                   onChange={(e) => setAnnouncementTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-800 focus:border-navy-800 outline-none"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-1 focus:ring-navy-800 focus:border-navy-800 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium text-slate-700 uppercase tracking-wide mb-1">
                   Xabar matni
                 </label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Hurmatli ThinkSpace a'zolari, ..."
+                  placeholder="Hurmatli ThinkSpace a'zolari..."
                   value={announcementMsg}
                   onChange={(e) => setAnnouncementMsg(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-navy-800 focus:border-navy-800 outline-none resize-none"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-md focus:ring-1 focus:ring-navy-800 focus:border-navy-800 outline-none resize-none leading-relaxed"
                 />
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <span>
+              <div className="bg-amber-50/80 border border-amber-200/80 rounded-md p-3 text-xs text-amber-900 flex items-start space-x-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5 stroke-[1.75]" />
+                <span className="leading-relaxed">
                   Ushbu e'lon tasdiqlangan barcha ThinkSpace a'zolariga mini-app bildirishnomalarida va Telegram botida yetkaziladi.
                 </span>
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-2">
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  className="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
                 >
                   Bekor qilish
                 </button>
                 <button
                   type="submit"
                   disabled={isSendingAnnouncement || !announcementTitle.trim() || !announcementMsg.trim()}
-                  className="px-4 py-2 text-xs font-medium text-white bg-navy-900 hover:bg-navy-800 rounded-lg transition shadow-sm flex items-center space-x-2 disabled:opacity-50"
+                  className="px-4 py-1.5 text-xs font-medium text-white bg-navy-900 hover:bg-navy-800 rounded-md transition-colors shadow-xs flex items-center space-x-1.5 disabled:opacity-50"
                 >
                   {isSendingAnnouncement ? (
                     <>
@@ -534,7 +530,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onNaviga
                     </>
                   ) : (
                     <>
-                      <Send className="w-3.5 h-3.5" />
+                      <Send className="w-3.5 h-3.5 stroke-[1.75]" />
                       <span>Barchaga yuborish</span>
                     </>
                   )}
